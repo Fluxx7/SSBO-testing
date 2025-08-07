@@ -1,0 +1,40 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="GraphicsTesting"
+run/main_scene="uid://c7j36bvqcqrso"
+config/features=PackedStringArray("4.4", "C#", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+AcerolaShaderCompiler="*res://acerola_shader_compiler.gd"
+
+[debug]
+
+settings/stdout/print_gpu_profile=true
+
+[display]
+
+window/size/mode=2
+window/vsync/vsync_mode=0
+
+[dotnet]
+
+project/assembly_name="GraphicsTesting"
+
+[shader_globals]
+
+camera_coords={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
