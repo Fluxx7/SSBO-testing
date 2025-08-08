@@ -6,17 +6,19 @@ render_mode world_vertex_coords, shadows_disabled;
 
 #define MAX_WAVES 64
 
-
+group_uniforms managed;
 uniform sampler2D wave_texture;
 uniform uint waveCount;
 global uniform vec3 camera_coords;
+group_uniforms;
 
 varying float wave_height;
 varying float fresnel;
+
+group_uniforms toggles;
 uniform bool use_expsine = true;
 uniform bool useVertexShift = false;
-
-
+group_uniforms;
 
 
 
@@ -54,6 +56,7 @@ vec2 wave_derivatives(vec2 uv, Wave w) {
 uniform float amp_mod = 1.0;
 uniform float cutoff_dist = 250.0;
 uniform float cutoff_strength = 0.007;
+
 void vertex() {
 	if (useVertexShift) {
 		VERTEX.xz += xzShift(VERTEX, camera_coords, NODE_POSITION_WORLD);
@@ -63,32 +66,45 @@ void vertex() {
 
 	float displacement = 0.0;
 	vec2 prev_derivs = vec2(0.0);
+	vec2 uv = VERTEX.xz;
 	for (uint i = 0u; i < waveCount; i++) {
 		Wave w = get_wave(i, wave_texture);
 		w.amplitude *= amp_mod;
-		vec2 uv = vec2(VERTEX.x+prev_derivs.x, VERTEX.z+prev_derivs.y);
-
-		displacement += w.amplitude*wave_displacement(uv, w);
+		uv += prev_derivs * w.direction * w.amplitude;
 		prev_derivs = wave_derivatives(uv, w);
+		displacement += w.amplitude*wave_displacement(uv,w);
 	}
-	wave_height = displacement;
-	VERTEX.y += displacement * distance_factor;//
+	VERTEX.xz = uv;
+	VERTEX.y = displacement;// * distance_factor;
 
 }
 
-#define roughness 0.65
+
+
+group_uniforms colors;
 uniform vec4 water_color : source_color = vec4(0.1, 0.17, 0.27, 1.0);
+group_uniforms;
 varying vec2 v_derivatives;
 void fragment() {
 	float dist = length(VERTEX.xz);
 
 	vec2 derivatives = vec2(0.0);
+	float displacement = 0.0;
+	vec2 prev_derivs = vec2(0.0);
+	vec2 uv = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xz;
 	for (uint i = 0u; i < waveCount; i++) {
 		Wave w = get_wave(i, wave_texture);
 		w.amplitude *= amp_mod;
-		derivatives += wave_derivatives(UV, w);
+		prev_derivs = wave_derivatives(uv, w);
+		uv += prev_derivs * w.direction * w.amplitude;
+
+		derivatives += prev_derivs;
+		displacement += w.amplitude*wave_displacement(uv,w);
+
 	}
 	v_derivatives = derivatives;
+	wave_height = displacement;
+
 
 	ALBEDO = water_color.rgb;
 
@@ -96,30 +112,17 @@ void fragment() {
 	gradient *= mix(0.015, 1.0, exp(-dist * 0.0175));
 	NORMAL = (VIEW_MATRIX * vec4(normalize(vec3(-gradient.x, 1.0, -gradient.z)), 0.0)).xyz;
 
-	fresnel = schlick_fresnel(dotclampedzero(NORMAL, VIEW), roughness);
-	
+
+	fresnel = mix(schlick_fresnel(dot(NORMAL, VIEW), roughness), 1.0, REFLECTANCE);
 	ROUGHNESS = 0.4;
 }
 
 
 
-
 void light() {
-	vec3 halfway = normalize(LIGHT + VIEW);
-	float dot_nl = max(dot(NORMAL, LIGHT), 2e-5);
-	float dot_nv = max(dot(NORMAL, VIEW), 2e-5);
 
-	// --- SPECULAR ---
-	float light_mask = smith_masking_shadowing(dot_nl, roughness);
-	float view_mask = smith_masking_shadowing(dot_nv, roughness);
-	float microfacet_distribution = ggx_distribution(dot(NORMAL, halfway), roughness);
-	float geometric_attenuation = 1.0 / (1.0 + light_mask + view_mask);
 	SPECULAR_LIGHT += specular(LIGHT, LIGHT_COLOR, VIEW, NORMAL, v_derivatives) * ATTENUATION;
 
-	// --- DIFFUSE ---
-	const vec3 sss_modifier = vec3(0.9,1.15,0.85); // Subsurface scattering produces a 'greener' color.
-	float sss_height = 1.0*max(0.0, wave_height + 2.5) * pow(max(dot(LIGHT, -VIEW), 0.0), 4.0) * pow(0.5 - 0.5 * dot(LIGHT, NORMAL), 3.0);
-	float sss_near = 0.5*pow(dot_nv, 2.0);
-	float lambertian = 0.5*dot_nl;
-	DIFFUSE_LIGHT += ((sss_height + sss_near) * sss_modifier / (1.0 + light_mask) + lambertian) * (1.0 - fresnel) * ATTENUATION * LIGHT_COLOR;
+
+	DIFFUSE_LIGHT += diffuse(LIGHT, LIGHT_COLOR, VIEW, NORMAL, wave_height) * (1.0 - fresnel) * ATTENUATION;
 }

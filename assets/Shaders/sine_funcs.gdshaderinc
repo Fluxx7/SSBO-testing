@@ -1,4 +1,6 @@
+group_uniforms managed;
 uniform float time = 0.0;
+group_uniforms;
 
 struct Wave{
 	vec2 direction;
@@ -20,12 +22,12 @@ vec2 d_sine(vec2 uv, Wave w) {
 }
 
 float expsine(vec2 uv, Wave w) {
-	return exp(1.2*sin(dot(w.direction, uv)*w.frequency+w.phase*time)-1.0);
+	return exp(sin(dot(w.direction, uv)*w.frequency+w.phase*time)-1.0);
 }
 
 vec2 d_expsine(vec2 uv, Wave w) {
 	float phase_time = w.phase*time;
-	float d_sin = 1.2*cos(dot(w.direction, uv)*w.frequency+phase_time);
+	float d_sin = cos(dot(w.direction, uv)*w.frequency+phase_time);
 	float dX = w.frequency * w.direction.x * w.amplitude * d_sin * expsine(uv, w);
 	float dZ = w.frequency * w.direction.y * w.amplitude * d_sin * expsine(uv, w);
 	return vec2(dX, dZ);

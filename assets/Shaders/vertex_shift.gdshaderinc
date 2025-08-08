@@ -1,10 +1,15 @@
 
+group_uniforms Vertex_Shift_controls;
 uniform float wm = 0.99;
 uniform float k = 1.0;
 uniform float m = 10.0;
 uniform vec2 shiftClamp = vec2(0.05,0.78);
-uniform vec2 size = vec2(2000.0);
 uniform float epsilon = 0.00001;
+group_uniforms;
+
+group_uniforms managed;
+uniform vec2 size = vec2(2000.0);
+group_uniforms;
 
 
 // need to make shift circular, need to only add drag to vertices for edges opposite from the camera
