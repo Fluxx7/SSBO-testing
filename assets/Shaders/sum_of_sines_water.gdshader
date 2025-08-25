@@ -15,11 +15,11 @@ uniform sampler2D wave_texture;
 #endif
 uniform uint waveCount;
 global uniform vec3 camera_coords;
-group_uniforms; 
+group_uniforms;
 
-   
- 
-#if USE_UBO 
+
+
+#if USE_UBO
 buffer uniform restrict waves {
 	Wave wave_array[WAVE_COUNT];
 }(bindname = waveBuffer);
@@ -27,7 +27,7 @@ buffer uniform restrict waves {
 buffer restrict in waves {
 	Wave wave_array[WAVE_COUNT];
 }(bindname = waveBuffer);
-#endif 
+#endif
 
 group_uniforms toggles;
 uniform bool use_derivative_displacement = true;
@@ -139,12 +139,12 @@ void fragment() {
 
 	NORMAL = normalize(VIEW_MATRIX * vec4(model_normal, 0.0)).xyz;
 
-	
+
 	ROUGHNESS = 0.0;
 }
 
 
 
-void light() { 	
+void light() {
 	brdf_lighting(LIGHT, LIGHT_COLOR, VIEW, VIEW_MATRIX, NORMAL, vec2(0.0), wave_height, SPECULAR_LIGHT, DIFFUSE_LIGHT);
 }

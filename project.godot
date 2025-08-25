@@ -15,10 +15,6 @@ run/main_scene="uid://c7j36bvqcqrso"
 config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
-[autoload]
-
-AcerolaShaderCompiler="*res://acerola_shader_compiler.gd"
-
 [debug]
 
 file_logging/enable_file_logging=true
