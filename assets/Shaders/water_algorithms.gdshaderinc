@@ -1,31 +1,15 @@
-group_uniforms toggles;
-uniform bool useGGX = false;
-group_uniforms;
-
-// Source: https://github.com/godotengine/godot/blob/7b56111c297f24304eb911fe75082d8cdc3d4141/drivers/gles3/shaders/scene.glsl#L995
-float ggx_distribution(in float cos_theta, in float alpha) {
-	float a_sq = alpha*alpha;
-	float d = 1.0 + (a_sq - 1.0) * cos_theta * cos_theta;
-	return a_sq / (PI * d*d);
-}
-
-
 #define REFLECTANCE 0.0201
-
-group_uniforms managed;
-uniform vec2 moments;
-group_uniforms;
 
 float dotclamped(vec3 a, vec3 b){
 	return max(dot(a, b),2e-5);
 }
 
-float dotclampedzero(vec3 a, vec3 b){
-	return clamp(dot(a, b),2e-5, 1.0);
-}
-
-float dotclampedneg(vec3 a, vec3 b){
-	return clamp(dot(a, b),-1.0,1.0);
+// Source: https://github.com/godotengine/godot/blob/7b56111c297f24304eb911fe75082d8cdc3d4141/drivers/gles3/shaders/scene.glsl#L995
+float ggx_distribution(in vec3 normal, in vec3 halfway, in float alpha) {
+	float cos_theta = dot(normal, halfway);
+	float a_sq = alpha*alpha;
+	float d = 1.0 + (a_sq - 1.0) * cos_theta * cos_theta;
+	return a_sq / (PI * d*d);
 }
 
 
@@ -35,95 +19,62 @@ float smith_masking_shadowing(in float cos_theta, in float alpha) {
 	return a < 1.6 ? (1.0 - 1.259*a + 0.396*a_sq) / (3.535*a + 2.181*a_sq) : 0.0;
 }
 
-uniform float roughness : hint_range(0.0, 1.0, 0.1) = 0.4;
-// done (?)
-float beckmann_distribution(in float ax, in float az) {
-	float inner_term = -((ax * ax)/(roughness)) - ((az * az)/(roughness));
-	return exp(inner_term) * 1.0/(PI*(roughness));
-}
 
-
-
-// done (?)
-float projected_anisotropic_roughness(in float ax, in float az, in float phi) {
-	float ax_sq = pow(ax, 2.0);
-	float az_sq = pow(az, 2.0);
-	float cos_sq_phi = pow(cos(phi),2.0);
-	float sin_sq_phi = pow(sin(phi),2.0);
-	return sqrt(ax_sq * cos_sq_phi + az_sq * sin_sq_phi);
-}
-
-
-float walter_estimation(in vec3 incoming, in vec3 outgoing, in vec3 normal, in float ax, in float az) {
-	vec2 angles_inc = vec2(dot(normal, incoming), atan(incoming.x, incoming.z));
-	vec2 angles_out = vec2(dot(normal, outgoing), atan(outgoing.x, outgoing.z));
-	
-	float alpha_inc = projected_anisotropic_roughness(ax, az, angles_inc.y);
-	float alpha_out = projected_anisotropic_roughness(ax, az, angles_out.y);
-	return (1.0 + smith_masking_shadowing(angles_inc.x, alpha_inc) + smith_masking_shadowing(angles_out.x, alpha_out));
-}
-
-
-// done
 float schlick_fresnel(float cos_theta, float av) {
 	float upper_term = pow(1.0-cos_theta,5.0 * exp(-2.69 * av));
 	float lower_term = 1.0 + 22.7*pow(av, 1.5);
 	return REFLECTANCE + (1.0 - REFLECTANCE) * upper_term / lower_term;
 }
 
-float simple_fresnel(float cos_theta, float av) {
-	float upper_term = pow(1.0-cos_theta,5.0);
-	return REFLECTANCE + (1.0 - REFLECTANCE) * upper_term;
-}
-
-vec3 specular(in vec3 light, in vec3 light_color, in vec3 view, in vec3 normal, in vec2 derivatives) {
-	vec3 halfway = normalize(light + view);
-	
-	
-	float ax = derivatives.x;
-	float az = derivatives.y;
-	 
-	float av = projected_anisotropic_roughness(ax, az, atan(view.x, view.z));
-	
-	
-	float distribution = ggx_distribution(dot(normal, halfway),av);//beckmann_distribution(ax, az); //
-	 
-	vec3 upper_term = light_color * schlick_fresnel(dot(normal, view), av) * distribution;
-	float lower_term = 4.0 * dot(view, vec3(0.0,0.0,1.0)) * walter_estimation(light, view, normal, ax, az);
-	return upper_term / lower_term;
-}
-
 group_uniforms colors;
-uniform vec4 water_scatter_color : source_color = vec4(0.9,1.15,0.85,1.0); // Subsurface scattering produces a 'greener' color.
-uniform vec4 air_bubble_color : source_color = vec4(0.9,1.15,0.85,1.0); // Subsurface scattering produces a 'greener' color.
+uniform vec4 water_scatter_color : source_color = vec4(0.4,1.15,0.85,1.0); // Subsurface scattering produces a 'greener' color.
+uniform vec4 air_bubble_color : source_color = vec4(0.1,0.18,0.27,1.0); // Subsurface scattering produces a 'greener' color.
 group_uniforms;
 
 group_uniforms subsurface_scattering_parameters;
-uniform float k1 : hint_range(0.0, 100.0, 0.01) = 1.0;
-uniform float k2 : hint_range(0.0, 10.0, 0.01) = 1.0;
-uniform float k3 : hint_range(0.0, 10.0, 0.01) = 1.0;
-uniform float k4 : hint_range(0.0, 10.0, 0.01) = 1.0;
-uniform float air_bubble_density : hint_range(0.0, 1.0, 0.01) = 1.0;
+uniform float height_scale : hint_range(0.0, 50.0, 0.01) = 2.5;
+uniform float k2 : hint_range(0.0, 50.0, 0.01) = 2.25;
+uniform float k3 : hint_range(0.0, 10.0, 0.01) = 0.35;
+uniform float k4 : hint_range(0.0, 10.0, 0.01) = 2.15;
+uniform float air_bubble_density : hint_range(0.0, 10.0, 0.01) = 3.4;
 group_uniforms;
  
 float dotpos(vec3 a, vec3 b) {
-	return max(dot(a,b), 0.0);
+	return max(dot(a,b), 0.0); 
 }
 
-vec3 diffuse(in vec3 light, in vec3 light_color, in vec3 view, in vec3 normal, in float wave_height) {
+void brdf_lighting(in vec3 light, in vec3 light_color, in vec3 view, in mat4 view_matrix, in vec3 mesonormal, in vec2 slopes, in float wave_height, inout vec3 specular, inout vec3 diffuse){
 	vec3 halfway = normalize(light + view);
+	vec3 macronormal = normalize(view_matrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz;
 	float height = max(0.0, wave_height);
 	
-	float term1 = k1 * height * pow(dotpos(light, -view), 4);
 	
-	float term2 = pow(0.5 - 0.5 * dot(light, normal),3);
+	float NdotL = dotclamped(macronormal, light);
+	float NdotV = dotclamped(macronormal, view);
+	float light_mask = smith_masking_shadowing(NdotL, REFLECTANCE);
+	float view_mask = smith_masking_shadowing(NdotV, REFLECTANCE);
 	
-	float dopo_vn = dotpos(view, normal);
-	float term3 = k2 * dopo_vn * dopo_vn;
+	float fresnel = schlick_fresnel(dot(halfway, light), REFLECTANCE);
+	float distribution = ggx_distribution(mesonormal, halfway, REFLECTANCE);
 	
-	vec3 first_term = (term1 * term2 + term3) * water_scatter_color.xyz * light_color / (1.0 + smith_masking_shadowing(dot(light, normal), 0.65));
-	vec3 second_term = (k3 * dotpos(light, normal) * water_scatter_color.xyz + k4 * air_bubble_density * air_bubble_color.xyz) * light_color;
-	return first_term + second_term;
+	 
+	vec3 upper_specular_term = light_color * fresnel * distribution;
+	float lower_specular_term = 4.0 * dotclamped(macronormal, view) * (1.0 + light_mask + view_mask);
+	specular += upper_specular_term / lower_specular_term;
+	
+	float height_dot = dotpos(light, -view);
+	float height_dot_pow4 = height_dot * height_dot * height_dot * height_dot;
+	
+	float height_term2 = fma(-0.5, dot(light, macronormal), 0.5);
+	float height_term2_pow3 = height_term2 * height_term2 * height_term2;
+	
+	float light_reflection_scatter = dotpos(view, macronormal) * dotpos(view, macronormal)  * k2;
+	
+	vec3 diffuse_out = fma(height_scale * height, height_dot_pow4 * height_term2_pow3, light_reflection_scatter) * water_scatter_color.rgb * light_color / (1.0 + light_mask);
+	diffuse_out += fma(k3 * dotpos(light, macronormal) * water_scatter_color.rgb, light_color, k4 * air_bubble_color.rgb * air_bubble_density * light_color);
+	diffuse_out *= (1.0 - fresnel);
+	diffuse += diffuse_out;
+	
 }
 
 

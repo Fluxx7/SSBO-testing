@@ -2,8 +2,8 @@
 group_uniforms Vertex_Shift_controls;
 uniform float wm = 0.99;
 uniform float k = 1.0;
-uniform float m = 10.0;
-uniform vec2 shiftClamp = vec2(0.05,0.78);
+uniform float m = 25.0;
+uniform vec2 shiftClamp = vec2(0.01,0.96);
 uniform float epsilon = 0.00001;
 group_uniforms;
 
@@ -72,7 +72,3 @@ vec2 xzShift(vec3 vertex, vec3 cam, vec3 node) {
 
     return to_cam * min(shift_factor,shiftClamp.y) * wm;
 }
-
-//vec2 xzShift(vec3 vertex, vec3 cam, vec3 node) {
-	//return xzShiftNew(vertex,cam,node);
-//}
