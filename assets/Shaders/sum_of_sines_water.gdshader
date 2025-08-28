@@ -5,26 +5,22 @@ render_mode world_vertex_coords, shadows_disabled;
 #include "water_algorithms.gdshaderinc"
 
 #define WAVE_COUNT 42u
-#define USE_UBO true
+
 #define USE_SSBO true
 
 group_uniforms managed;
 
-#if !USE_UBO && !USE_SSBO
-uniform sampler2D wave_texture;
-#endif
-uniform uint waveCount;
 global uniform vec3 camera_coords;
 group_uniforms;
 
 
 
-#if USE_UBO
-buffer uniform restrict waves {
+#if USE_SSBO
+buffer restrict in {
 	Wave wave_array[WAVE_COUNT];
-}(bindname = waveBuffer);
-#elif USE_SSBO
-buffer restrict in waves {
+}(bindname = waveBuffer, format = std430);
+#else
+buffer uniform restrict {
 	Wave wave_array[WAVE_COUNT];
 }(bindname = waveBuffer);
 #endif
@@ -33,18 +29,6 @@ group_uniforms toggles;
 uniform bool use_derivative_displacement = true;
 uniform bool useVertexShift = false;
 group_uniforms;
-
-
-#if !USE_UBO && !USE_SSBO
-Wave get_wave(uint index, sampler2D waveTex){
-    float tex_width = float(waveCount);
-    vec2 uv0 = vec2((float(index) + 0.5) / tex_width, 0.25); // y = 0th row
-    vec2 uv1 = vec2((float(index) + 0.5) / tex_width, 0.75); // y = 1st row
-    vec3 p0 = texture(waveTex, uv0).rgb;
-    vec3 p1 = texture(waveTex, uv1).rgb;
-    return Wave(vec2(p0.r - 1.0, p0.g - 1.0), p1.r, p1.g, p1.b);
-}
-#endif
 
 
 float wave_displacement(vec2 uv, Wave w) {
@@ -70,30 +54,19 @@ void vertex() {
 	float displacement = 0.0;
 	vec2 prev_derivs = vec2(0.0);
 	vec2 uv = VERTEX.xz;
-#if USE_UBO || USE_SSBO
-	for (int i = 0; i < waves.wave_array.length(); i++) {
-		Wave w = waves.wave_array[i];
+	for (int i = 0; i < wave_array.length(); i++) {
+		Wave w = wave_array[i];
 		w.amplitude *= amp_mod;
 		prev_derivs = w.amplitude* wave_derivatives(uv, w);
 		uv += -prev_derivs * w.direction * w.amplitude * 1.7;
 
 		displacement += w.amplitude*wave_displacement(uv,w);
 	}
-#else
-	for (uint i = 0u; i < waveCount; i++) {
-		Wave w = get_wave(i, wave_texture);
-		w.amplitude *= amp_mod;
-		prev_derivs = w.amplitude* wave_derivatives(uv, w);
-		uv += -prev_derivs * w.direction * w.amplitude * 1.7;
-
-		displacement += w.amplitude*wave_displacement(uv,w);
-	}
-#endif
 
 	if (use_derivative_displacement) {
 		VERTEX.xz = uv;
 	}
-	VERTEX.y = displacement * dist_factor;// * distance_factor;
+	VERTEX.y += displacement * dist_factor;// * distance_factor;
 
 }
 
@@ -107,9 +80,8 @@ void fragment() {
 	float displacement = 0.0;
 	vec2 prev_derivs = vec2(0.0);
 	vec2 uv = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xz;
-#if USE_UBO || USE_SSBO
-	for (int i = 0; i < waves.wave_array.length(); i++) {
-		Wave w = waves.wave_array[i];
+	for (int i = 0; i < wave_array.length(); i++) {
+		Wave w = wave_array[i];
 		w.amplitude *= amp_mod;
 		prev_derivs = w.amplitude * wave_derivatives(uv, w);
 		uv += -prev_derivs * w.direction * w.amplitude * 1.7;
@@ -118,18 +90,6 @@ void fragment() {
 		displacement += w.amplitude*wave_displacement(uv,w);
 
 	}
-#else
-	for (uint i = 0u; i < waveCount; i++) {
-		Wave w = get_wave(i, wave_texture);
-		w.amplitude *= amp_mod;
-		prev_derivs = w.amplitude * wave_derivatives(uv, w);
-		uv += -prev_derivs * w.direction * w.amplitude * 1.7;
-
-		derivatives += prev_derivs;
-		displacement += w.amplitude*wave_displacement(uv,w);
-
-	}
-#endif
 
 	wave_height = displacement;
 	ALBEDO = water_color.rgb;
@@ -140,7 +100,7 @@ void fragment() {
 	NORMAL = normalize(VIEW_MATRIX * vec4(model_normal, 0.0)).xyz;
 
 
-	ROUGHNESS = 0.0;
+	ROUGHNESS = 0.02;
 }
 
 

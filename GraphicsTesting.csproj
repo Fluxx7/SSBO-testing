@@ -4,4 +4,7 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>GraphicsTesting</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Include="assets\Shaders\Compute\GLSL\dft.glsl" />
+  </ItemGroup>
 </Project>
