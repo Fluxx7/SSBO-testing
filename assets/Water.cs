@@ -19,6 +19,7 @@ public partial class Water : MeshInstance3D {
 
 	private ShaderMaterial _material;
 	[ExportGroup("Materials")] [Export] public ShaderMaterial _sumOfSinesMat = null;
+	[Export] public ShaderMaterial _sumOfSinesTextureMat = null;
 	[Export] public ShaderMaterial _JONSWAPWaterMat = null; // not implemented yet
 	[ExportGroup("")] private PlaneMesh plane = null;
 	[Export] public Vector2 size;
@@ -28,8 +29,10 @@ public partial class Water : MeshInstance3D {
 	[Export] public bool render = true;
 	[Export] public bool simulate = false;
 
+	private ImageTexture texture;
+	[Export] public uint waveCount = 42;
+	
 	[ExportGroup("Sum of Sines")]
-	//[Export] public uint waveCount = 16;
 	[ExportSubgroup("Wave Parameters")]
 	[Export]
 	public float baseAmplitude = 1.0f;
@@ -56,14 +59,19 @@ public partial class Water : MeshInstance3D {
 	[ExportToolButton("Regenerate Mesh")]
 	public Callable regenerate => Callable.From(RegenerateMesh);
 	[ExportToolButton("Regenerate Waves")]
-	public Callable regenWaves => Callable.From(() => { waves = GenerateSineWaves(); RegenerateMesh();});
+	public Callable regenWaves => Callable.From(RegenerateWaves);
 
+	public void RegenerateWaves() {
+		waves = GenerateSineWaves();
+		plane = null;
+		GenerateMesh();
+	}
 
 	#region Overrides
 
 	public override void _Ready() {
-		if (Engine.IsEditorHint()) return;
 		waves = GenerateSineWaves();
+		if (Engine.IsEditorHint()) return;
 		GenerateMesh();
 	}
 
@@ -98,7 +106,7 @@ public partial class Water : MeshInstance3D {
 		float frequency = baseFrequency;
 		float amplitude = baseAmplitude;
 		float phase = phase_modifier;
-		for (int i = 0; i < 42; i++) {
+		for (int i = 0; i < waveCount; i++) {
 			var wave = new Wave();
 			wave["directionX"] = Mathf.Sin(seed);
 			wave["directionY"] = Mathf.Cos(seed);
@@ -139,7 +147,13 @@ public partial class Water : MeshInstance3D {
 					{"wave_array", waves} 
 				});
 		} else {
-			
+			var image = Image.CreateEmpty((int)waveCount, 2, false, Image.Format.Rgbf);
+			for (int i = 0; i < waveCount; i++) {
+				image.SetPixel(i, 0, new Color(waves[i]["directionX"], waves[i]["directionY"], 0));
+				image.SetPixel(i, 1, new Color(waves[i]["amplitude"], waves[i]["frequency"], waves[i]["phase"]));
+			}
+			ImageTexture tex = ImageTexture.CreateFromImage(image);
+			_material.SetShaderParameter("wave_texture", tex);
 		}
 	}
 
@@ -147,7 +161,13 @@ public partial class Water : MeshInstance3D {
 		if (plane != null) return;
 		switch (_waterSystem) {
 			case WaterSystem.SumOfSines:
-				_material = _sumOfSinesMat;
+				if (useBuffers) {
+					_material = _sumOfSinesMat;
+				} else {
+					_material = _sumOfSinesTextureMat;
+					_material.SetShaderParameter("waveCount", waveCount);
+				}
+				
 				UpdateShaderWaves(waves);
 				break;
 			case WaterSystem.JONSWAP:

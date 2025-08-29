@@ -1,9 +1,10 @@
-[gd_scene load_steps=11 format=3 uid="uid://c7j36bvqcqrso"]
+[gd_scene load_steps=15 format=3 uid="uid://c7j36bvqcqrso"]
 
 [ext_resource type="Script" uid="uid://8560q4g3mplt" path="res://Custom/DensityTarget.cs" id="1_8adiu"]
 [ext_resource type="Script" uid="uid://c4dvp1scoivp3" path="res://assets/Water.cs" id="3_8adiu"]
 [ext_resource type="Shader" uid="uid://cf6cwynfn2fdn" path="res://assets/Shaders/sum_of_sines_water.gdshader" id="3_kxn0a"]
 [ext_resource type="Shader" uid="uid://ydttxe06jcko" path="res://assets/Shaders/jonswap_water.gdshader" id="4_g538k"]
+[ext_resource type="Shader" uid="uid://bxwegidev13eg" path="res://assets/Shaders/sum_of_sines_water_tex.gdshader" id="4_kxn0a"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_kxn0a"]
 render_priority = 0
@@ -14,8 +15,8 @@ shader_parameter/m = 25.0
 shader_parameter/shiftClamp = Vector2(0.01, 0.96)
 shader_parameter/epsilon = 1e-05
 shader_parameter/size = Vector2(8000, 8000)
-shader_parameter/time = 673.1773
-shader_parameter/water_scatter_color = Color(0.4, 1.15, 0.85, 1)
+shader_parameter/time = 12.849123
+shader_parameter/water_scatter_color = Color(0.39968106, 1.1220369, 0.6884715, 1)
 shader_parameter/air_bubble_color = Color(0.1, 0.18, 0.27, 1)
 shader_parameter/water_color = Color(0.1, 0.18, 0.35, 1)
 shader_parameter/height_scale = 2.5
@@ -29,11 +30,50 @@ shader_parameter/amp_mod = 1.0
 shader_parameter/cutoff_dist = 1000.0
 shader_parameter/cutoff_strength = 0.0007
 
-[sub_resource type="PlaneMesh" id="PlaneMesh_8adiu"]
+[sub_resource type="PlaneMesh" id="PlaneMesh_g538k"]
 material = SubResource("ShaderMaterial_kxn0a")
 size = Vector2(8000, 8000)
 subdivide_width = 512
 subdivide_depth = 512
+
+[sub_resource type="Image" id="Image_kxn0a"]
+data = {
+"data": PackedByteArray(0, 0, 0, 0, 0, 0, 128, 63, 0, 0, 0, 0, 15, 231, 126, 63, 233, 109, 189, 61, 0, 0, 0, 0, 6, 158, 60, 62, 164, 158, 123, 191, 0, 0, 0, 0, 245, 45, 118, 191, 141, 115, 140, 190, 0, 0, 0, 0, 210, 99, 185, 190, 241, 160, 110, 63, 0, 0, 0, 0, 29, 8, 101, 63, 105, 189, 228, 62, 0, 0, 0, 0, 119, 16, 7, 63, 147, 120, 89, 191, 0, 0, 0, 0, 178, 11, 76, 191, 195, 153, 26, 191, 0, 0, 0, 0, 185, 207, 44, 191, 243, 222, 60, 63, 0, 0, 0, 0, 164, 19, 44, 63, 94, 138, 61, 63, 0, 0, 0, 0, 252, 164, 76, 63, 162, 206, 25, 191, 0, 0, 0, 0, 7, 56, 6, 191, 106, 254, 89, 191, 0, 0, 0, 0, 92, 121, 101, 191, 161, 245, 226, 62, 0, 0, 0, 0, 12, 137, 183, 62, 160, 252, 110, 63, 0, 0, 0, 0, 82, 115, 118, 63, 156, 137, 138, 190, 0, 0, 0, 0, 47, 180, 56, 190, 19, 205, 123, 191, 0, 0, 0, 0, 35, 254, 126, 191, 118, 127, 181, 61, 0, 0, 0, 0, 60, 122, 126, 187, 130, 255, 127, 63, 0, 0, 0, 0, 5, 207, 126, 63, 162, 89, 197, 61, 0, 0, 0, 0, 35, 135, 64, 62, 60, 111, 123, 191, 0, 0, 0, 0, 145, 231, 117, 191, 111, 93, 142, 190, 0, 0, 0, 0, 209, 62, 187, 190, 39, 68, 110, 63, 0, 0, 0, 0, 193, 149, 100, 63, 52, 133, 230, 62, 0, 0, 0, 0, 206, 232, 7, 63, 161, 241, 88, 191, 0, 0, 0, 0, 81, 113, 75, 191, 178, 100, 27, 191, 0, 0, 0, 0, 129, 139, 45, 191, 118, 50, 60, 63, 0, 0, 0, 0, 134, 86, 43, 63, 100, 53, 62, 63, 0, 0, 0, 0, 199, 61, 77, 63, 130, 2, 25, 191, 0, 0, 0, 0, 165, 94, 5, 191, 173, 131, 90, 191, 0, 0, 0, 0, 241, 233, 101, 191, 19, 44, 225, 62, 0, 0, 0, 0, 160, 172, 181, 62, 144, 87, 111, 63, 0, 0, 0, 0, 214, 183, 118, 63, 105, 158, 136, 190, 0, 0, 0, 0, 165, 200, 52, 190, 148, 250, 123, 191, 0, 0, 0, 0, 40, 20, 127, 191, 74, 151, 173, 61, 0, 0, 0, 0, 190, 121, 254, 187, 6, 254, 127, 63, 0, 0, 0, 0, 1, 182, 126, 63, 153, 67, 205, 61, 0, 0, 0, 0, 133, 110, 68, 62, 231, 62, 123, 191, 0, 0, 0, 0, 86, 160, 117, 191, 11, 70, 144, 190, 0, 0, 0, 0, 39, 24, 189, 190, 161, 230, 109, 63, 0, 0, 0, 0, 189, 34, 100, 63, 53, 75, 232, 62, 0, 0, 0, 0, 50, 192, 8, 63, 28, 106, 88, 191, 0, 0, 0, 0, 117, 214, 74, 191, 160, 46, 28, 191, 0, 0, 0, 0, 0, 0, 32, 65, 10, 215, 163, 60, 0, 0, 0, 64, 51, 51, 3, 65, 201, 84, 193, 60, 195, 245, 8, 64, 2, 43, 215, 64, 124, 33, 228, 60, 22, 140, 18, 64, 17, 112, 176, 64, 224, 152, 6, 61, 55, 206, 28, 64, 208, 173, 144, 64, 28, 211, 30, 61, 44, 200, 39, 64, 3, 70, 109, 64, 191, 105, 59, 61, 211, 134, 51, 64, 115, 144, 66, 64, 189, 37, 93, 61, 242, 23, 64, 64, 238, 138, 31, 64, 27, 122, 130, 61, 68, 138, 77, 64, 52, 211, 2, 64, 124, 246, 153, 61, 140, 237, 91, 64, 146, 141, 214, 63, 23, 173, 181, 61, 168, 82, 107, 64, 248, 238, 175, 63, 185, 96, 214, 61, 165, 203, 123, 64, 244, 67, 144, 63, 64, 247, 252, 61, 233, 181, 134, 64, 103, 152, 108, 63, 245, 63, 21, 62, 237, 35, 144, 64, 23, 2, 66, 63, 99, 29, 48, 62, 236, 58, 154, 64, 50, 22, 31, 63, 193, 208, 79, 62, 186, 6, 165, 64, 123, 115, 2, 63, 227, 56, 117, 62, 0, 148, 176, 64, 150, 240, 213, 62, 93, 174, 144, 62, 72, 240, 188, 64, 62, 110, 175, 62, 68, 185, 170, 62, 16, 42, 202, 64, 102, 218, 143, 62, 54, 116, 201, 62, 217, 80, 216, 64, 75, 235, 107, 62, 53, 183, 237, 62, 59, 117, 231, 64, 36, 116, 65, 62, 146, 64, 12, 63, 246, 168, 247, 64, 204, 161, 30, 62, 100, 127, 37, 63, 132, 127, 4, 65, 8, 20, 2, 62, 133, 73, 67, 63, 226, 197, 13, 65, 13, 84, 213, 61, 90, 112, 102, 63, 117, 178, 23, 65, 226, 237, 174, 61, 124, 245, 135, 63, 223, 80, 34, 65, 37, 113, 143, 61, 120, 110, 160, 63, 147, 173, 45, 65, 173, 62, 107, 61, 39, 79, 189, 63, 227, 213, 57, 65, 152, 230, 64, 61, 132, 98, 223, 63, 16, 216, 70, 65, 186, 45, 30, 61, 11, 204, 3, 64, 89, 195, 84, 65, 219, 180, 1, 61, 64, 133, 27, 64, 17, 168, 99, 65, 246, 183, 212, 60, 162, 131, 55, 64, 173, 151, 115, 65, 227, 109, 174, 60, 247, 139, 88, 64, 110, 82, 130, 65, 48, 8, 143, 60, 112, 134, 127, 64, 205, 113, 139, 65, 140, 146, 106, 60, 132, 194, 150, 64, 166, 52, 149, 65, 115, 89, 64, 60, 135, 229, 177, 64, 106, 166, 159, 65, 253, 185, 29, 60, 0, 235, 209, 64, 88, 211, 170, 65, 243, 85, 1, 60, 4, 180, 247, 64, 138, 200, 182, 65, 81, 28, 212, 59, 22, 37, 18, 65, 5, 148, 195, 65, 66, 238, 173, 59, 112, 115, 44, 65, 201, 68, 209, 65, 136, 159, 142, 59, 249, 125, 75, 65, 226, 234, 223, 65, 233, 230, 105, 59, 227, 30, 112, 65, 125, 151, 239, 65, 181, 204, 63, 59, 210, 171, 141, 65, 125, 46, 0, 66),
+"format": "RGBFloat",
+"height": 2,
+"mipmaps": false,
+"width": 42
+}
+
+[sub_resource type="ImageTexture" id="ImageTexture_ho8b5"]
+image = SubResource("Image_kxn0a")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_smhey"]
+render_priority = 0
+shader = ExtResource("4_kxn0a")
+shader_parameter/wm = 0.99
+shader_parameter/k = 1.0
+shader_parameter/m = 25.0
+shader_parameter/shiftClamp = Vector2(0.01, 0.96)
+shader_parameter/epsilon = 1e-05
+shader_parameter/size = Vector2(8000, 8000)
+shader_parameter/time = 10.813546
+shader_parameter/wave_texture = SubResource("ImageTexture_ho8b5")
+shader_parameter/waveCount = 42
+shader_parameter/water_scatter_color = Color(0.4, 1.15, 0.85, 1)
+shader_parameter/air_bubble_color = Color(0.1, 0.18, 0.27, 1)
+shader_parameter/water_color = Color(0.1, 0.18, 0.35, 1)
+shader_parameter/height_scale = 2.5
+shader_parameter/k2 = 2.25
+shader_parameter/k3 = 0.35
+shader_parameter/k4 = 2.15
+shader_parameter/air_bubble_density = 3.4
+shader_parameter/use_derivative_displacement = true
+shader_parameter/deriv_displacement_mult = 1.7
+shader_parameter/useVertexShift = true
+shader_parameter/amp_mod = 1.0
+shader_parameter/cutoff_dist = 1000.0
+shader_parameter/cutoff_strength = 0.0007
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ho8b5"]
 render_priority = 0
@@ -96,15 +136,15 @@ current = true
 script = ExtResource("1_8adiu")
 
 [node name="Water" type="MeshInstance3D" parent="."]
-mesh = SubResource("PlaneMesh_8adiu")
+mesh = SubResource("PlaneMesh_g538k")
 script = ExtResource("3_8adiu")
-Time = 673.1773
+Time = 12.849123
 _sumOfSinesMat = SubResource("ShaderMaterial_kxn0a")
+_sumOfSinesTextureMat = SubResource("ShaderMaterial_smhey")
 _JONSWAPWaterMat = SubResource("ShaderMaterial_ho8b5")
 size = Vector2(8000, 8000)
 subdivide = 512
-simulate = true
-baseAmplitude = 7.0
+baseAmplitude = 10.0
 baseFrequency = 0.02
 phase_modifier = 2.0
 
@@ -114,4 +154,4 @@ environment = SubResource("Environment_6kuhc")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment"]
 transform = Transform3D(-0.9993919, 0.014859379, 0.03157799, 7.910258e-08, -0.9048261, 0.425779, 0.034899496, 0.42551947, 0.90427536, 0, 6.89, 0)
 
-[connection signal="pressed" from="CanvasLayer/Button" to="Water" method="RegenerateMesh"]
+[connection signal="pressed" from="CanvasLayer/Button" to="Water" method="RegenerateWaves"]
