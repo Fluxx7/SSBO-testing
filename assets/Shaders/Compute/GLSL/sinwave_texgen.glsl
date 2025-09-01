@@ -4,8 +4,6 @@
 layout(local_size_x = 2, local_size_y = 1, local_size_z = 1) in;
 
 layout(set = 0, binding = 0, std140) uniform restrict paramBuffer {
-    int waveCount;
-    float baseSeed;
     float baseAmplitude;
     float baseFrequency;
     float basePhase;
@@ -14,6 +12,11 @@ layout(set = 0, binding = 0, std140) uniform restrict paramBuffer {
 };
 
 layout(rgba16f, set = 0, binding = 1) restrict writeonly uniform image2D waveTexture;
+
+layout(push_constant) restrict readonly uniform PushConstants {
+    int waveCount;
+    float baseSeed;
+};
 
 void main() {
     if (gl_GlobalInvocationID.x >= waveCount) return;

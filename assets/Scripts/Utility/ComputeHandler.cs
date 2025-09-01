@@ -27,12 +27,41 @@ public class ComputeHandler {
 	public ComputeHandler(RenderingDevice new_rd) {
 		rd = new_rd;
 	}
+
+	~ComputeHandler() {
+		foreach (var pipeline in pipelines) {
+			if (rd.ComputePipelineIsValid(pipeline.Value)) {
+				rd.FreeRid(pipeline.Value);
+			}
+		}
+		foreach (var uniformSetArray in uniformSets) {
+			foreach (var uniformSet in uniformSetArray.Value) {
+				if (rd.UniformSetIsValid(uniformSet)) {
+					rd.FreeRid(uniformSet);
+				}
+			}
+		}
+		foreach (var pipeline in pipelines) {
+			if (rd.ComputePipelineIsValid(pipeline.Value)) {
+				rd.FreeRid(pipeline.Value);
+			}
+		}
+		foreach (var uniform in uniforms) {
+			rd.FreeRid(uniform.Value);
+		}
+	}
 	
 #region shader
 	public void AddShader(StringName shader, RDShaderFile shaderFile) {
-		if (shaders.ContainsKey(shader)) {
-			if (shaders[shader].IsValid) {
-				rd.FreeRid(shaders[shader]);
+		if (pipelines.TryGetValue(shader, out var oldPipeline)) {
+			if (rd.ComputePipelineIsValid(oldPipeline)) {
+				rd.FreeRid(oldPipeline);
+			}
+			rd.FreeRid(shaders[shader]);
+			foreach (var set in uniformSets[shader]) {
+				if (rd.UniformSetIsValid(set)) {
+					rd.FreeRid(set);
+				}
 			}
 		}
 
@@ -47,7 +76,7 @@ public class ComputeHandler {
 		return shaders.ContainsKey(shader);
 	}
 	
-	public void Dispatch(StringName shader, uint xThreads, uint yThreads, uint zThreads) {
+	public void Dispatch(StringName shader, uint xThreads, uint yThreads, uint zThreads, byte[] push_constants = null) {
 		uint currSet = 0;
 		
 		// for each set of uniform names stored for this shader
@@ -93,16 +122,19 @@ public class ComputeHandler {
 		
 		var computeList = rd.ComputeListBegin();
 		rd.ComputeListBindComputePipeline(computeList, pipelines[shader]);
+		if (push_constants != null) {
+			rd.ComputeListSetPushConstant(computeList, push_constants, (uint) push_constants.Length);
+		}
 		currSet = 0;
 		foreach (var set in uniformSets[shader]) {
-			rd.ComputeListBindUniformSet(computeList, uniformSets[shader][(int)currSet], currSet);
+			rd.ComputeListBindUniformSet(computeList, set, currSet);
 			currSet++;
 		}
 		rd.ComputeListDispatch(computeList, xThreads, yThreads, zThreads);
 		rd.ComputeListEnd();
 	}
 	
-	public void DispatchSubmit(StringName shader, uint xThreads, uint yThreads, uint zThreads) {
+	public void DispatchSubmit(StringName shader, uint xThreads, uint yThreads, uint zThreads, byte[] push_constants = null) {
 		Dispatch(shader, xThreads, yThreads, zThreads);
 		rd.Submit();
 	}
@@ -115,43 +147,43 @@ public class ComputeHandler {
 	
 #region uniforms
 	public Rid CreateBuffer(StringName buffer, RenderingDevice.UniformType type, uint sizeBytes, byte[] data = null) {
+		if (uniforms.TryGetValue(buffer, out Rid old_rid)) {
+			rd.FreeRid(old_rid);
+		}
+
+		Rid new_rid;
 		if (type == RenderingDevice.UniformType.UniformBuffer) {
-			uniforms[buffer] = rd.UniformBufferCreate(sizeBytes);
+			if (data != null) {
+				new_rid = rd.UniformBufferCreate(sizeBytes, data);
+			} else {
+				new_rid = rd.UniformBufferCreate(sizeBytes);
+			}
 			uniformTypes[buffer] = RenderingDevice.UniformType.UniformBuffer;
 		} else if (type == RenderingDevice.UniformType.StorageBuffer) {
-			uniforms[buffer] = rd.StorageBufferCreate(sizeBytes);
+			if (data != null) {
+				new_rid = rd.StorageBufferCreate(sizeBytes, data);
+			} else {
+				new_rid = rd.StorageBufferCreate(sizeBytes);
+			}
 			uniformTypes[buffer] = RenderingDevice.UniformType.StorageBuffer;
 		} else {
 			return new Rid();
 		}
+		uniforms[buffer] = new_rid;
 		uniformSizes[buffer] = (int) sizeBytes;
-		return uniforms[buffer];
+		return new_rid;
 	}
 	
 	public Rid CreateBuffer(StringName buffer, RenderingDevice.UniformType type, uint sizeBytes, StringName shader, int set, int binding, byte[] data = null) {
-		if (type == RenderingDevice.UniformType.UniformBuffer) {
-			if (data != null) {
-				uniforms[buffer] = rd.UniformBufferCreate(sizeBytes, data);
-			} else {
-				uniforms[buffer] = rd.UniformBufferCreate(sizeBytes);
-			}
-			uniformTypes[buffer] = RenderingDevice.UniformType.UniformBuffer;
-		} else if (type == RenderingDevice.UniformType.StorageBuffer) {
-			if (data != null) {
-				uniforms[buffer] = rd.StorageBufferCreate(sizeBytes, data);
-			} else {
-				uniforms[buffer] = rd.StorageBufferCreate(sizeBytes);
-			}
-			uniformTypes[buffer] = RenderingDevice.UniformType.StorageBuffer;
-		} else {
-			return new Rid();
-		}
-		uniformSizes[buffer] = (int) sizeBytes;
+		Rid new_rid = CreateBuffer(buffer, type, sizeBytes, data);
 		AssignUniform(shader, buffer, set, binding);
-		return uniforms[buffer];
+		return new_rid;
 	}
 
 	public Rid CreateTexture(StringName texture, uint xSize, uint ySize) {
+		if (uniforms.TryGetValue(texture, out Rid old_rid)) {
+			rd.FreeRid(old_rid);
+		}
 		var tex_format = new RDTextureFormat() {
 			Width = xSize,
 			Height = ySize,

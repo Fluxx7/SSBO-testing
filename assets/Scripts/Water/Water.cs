@@ -33,7 +33,12 @@ public partial class Water : MeshInstance3D {
 	[Export] public float gain = 1.18f;
 	[Export] public float lacunarity = 0.82f;
 	[Export] public float phase_modifier = 1.0f;
-	
+	private float prevAmp = 0.0f;
+	private float prevFreq = 0.0f;
+	private float prevGain = 0.0f;
+	private float prevLac = 0.0f;
+	private float prevPhase = 0.0f;
+	private float[] prevSeed;
 
 	[ExportGroup("")]
 	[ExportToolButton("Regenerate Mesh")]
@@ -75,6 +80,9 @@ public partial class Water : MeshInstance3D {
 	}
 
 	public override void _Process(double delta) {
+		if (compHandler == null) {
+			compHandler = new ComputeHandler(RenderingServer.GetRenderingDevice());
+		}
 		if (Engine.IsEditorHint()) {
 			if (plane != null && !render) {
 				plane = null;
@@ -105,25 +113,45 @@ public partial class Water : MeshInstance3D {
 		if (!compHandler.HasUniform("paramBuffer")) {
 			compHandler.CreateBuffer("paramBuffer", RenderingDevice.UniformType.UniformBuffer, 32);
 		}
-		var rng = new RandomNumberGenerator();
-		float seedMod = rng.RandfRange(0f, 4f * Mathf.Pi);
-		var inputUniforms = new byte[32];
-		uint[] inputWaveCount = [waveCount];
-		Buffer.BlockCopy( inputWaveCount, 0, inputUniforms, 0, sizeof(uint));
-		float[] inputs = [seedMod, baseAmplitude, baseFrequency, phase_modifier, lacunarity, gain];
-		Buffer.BlockCopy( inputs, 0, inputUniforms, sizeof(uint), sizeof(float) * 6);
 		
-		compHandler.SetBuffer("paramBuffer", 28u, inputUniforms);
+		if (prevAmp != baseAmplitude || prevFreq != baseFrequency || prevPhase != phase_modifier || prevGain != gain || prevLac != lacunarity) {
+			var inputUniforms = new byte[32];
+			
+			float[] inputs = [baseAmplitude, baseFrequency, phase_modifier, lacunarity, gain];
+			Buffer.BlockCopy( inputs, 0, inputUniforms, 0, sizeof(float) * 5);
+		
+			compHandler.SetBuffer("paramBuffer", 20u, inputUniforms);
+			prevAmp = baseAmplitude;
+			prevFreq = baseFrequency;
+			prevPhase = phase_modifier;
+			prevGain = gain;
+			prevLac = lacunarity;
+		}
+		
 		if (useBuffers) {
-			GenerateWaveBuffer();
+			GenerateWaveBuffer(PushConstants());
 		} else {
-			GenerateWaveTexture();
+			GenerateWaveTexture(PushConstants());
 		}
 	}
 
-	private void GenerateWaveBuffer() {
+	private byte[] PushConstants() {
+		var rng = new RandomNumberGenerator();
+		byte[] pushConstants = new byte[16];
+		float[] seedMod = [rng.RandfRange(0f, 4f * Mathf.Pi)];
+		prevSeed = seedMod;
+		uint[] inputWaveCount = [waveCount];
+		Buffer.BlockCopy( inputWaveCount, 0, pushConstants, 0, sizeof(uint));
+		Buffer.BlockCopy( seedMod, 0, pushConstants, sizeof(uint), sizeof(float));
+		return pushConstants;
+	}
+
+	private void GenerateWaveBuffer(byte[] pushConstants) {
 		if (!compHandler.HasShader("buffer_gen")) {
 			compHandler.AddShader("buffer_gen", GD.Load<RDShaderFile>("res://assets/Shaders/Compute/GLSL/sinwavegen.glsl"));
+			if (!compHandler.HasUniform("paramBuffer")) {
+				compHandler.CreateBuffer("paramBuffer", RenderingDevice.UniformType.UniformBuffer, 32);
+			}
 			compHandler.AssignUniform("buffer_gen", "paramBuffer", 0, 0);
 		}
 		
@@ -132,13 +160,16 @@ public partial class Water : MeshInstance3D {
 		}
 		
 		compHandler.SetBuffer("waveBuffer", waveCount * 24);
-		compHandler.Dispatch("buffer_gen", waveCount / 2, 1, 1);
+		compHandler.Dispatch("buffer_gen", waveCount / 2, 1, 1, pushConstants);
 		_material.SetShaderBufferRaw("waveBuffer", compHandler.GetBufferData("waveBuffer"));
 	}
 	
-	private void GenerateWaveTexture() {
+	private void GenerateWaveTexture(byte[] pushConstants) {
 		if (!compHandler.HasShader("texture_gen")) {
 			compHandler.AddShader("texture_gen", GD.Load<RDShaderFile>("res://assets/Shaders/Compute/GLSL/sinwave_texgen.glsl"));
+			if (!compHandler.HasUniform("paramBuffer")) {
+				compHandler.CreateBuffer("paramBuffer", RenderingDevice.UniformType.UniformBuffer, 32);
+			}
 			compHandler.AssignUniform("texture_gen", "paramBuffer", 0, 0);
 		}
 		
@@ -149,7 +180,7 @@ public partial class Water : MeshInstance3D {
 			compHandler.AssignUniform("texture_gen", "waveTexture", 0, 1);
 		}
 		
-		compHandler.Dispatch("texture_gen", waveCount / 2, 1, 1);
+		compHandler.Dispatch("texture_gen", waveCount / 2, 1, 1, pushConstants);
 	}
 
 
@@ -165,13 +196,13 @@ public partial class Water : MeshInstance3D {
 		if (useBuffers) {
 			_material = _sumOfSinesMat;
 			if (!compHandler.HasUniform("waveBuffer")) {
-				GenerateWaveBuffer();
+				GenerateWaveBuffer(PushConstants());
 			}
 		} else {
 			_material = _sumOfSinesTextureMat;
 			_material.SetShaderParameter("waveCount", waveCount);
 			if (!compHandler.HasUniform("waveTexture")) {
-				GenerateWaveTexture();
+				GenerateWaveTexture(PushConstants());
 			}
 		}
 		plane = new() {

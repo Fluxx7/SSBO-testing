@@ -42,11 +42,11 @@ shader_parameter/m = 25.0
 shader_parameter/shiftClamp = Vector2(0.01, 0.96)
 shader_parameter/epsilon = 1e-05
 shader_parameter/size = Vector2(8000, 8000)
-shader_parameter/time = 1626.1804
+shader_parameter/time = 99.720474
 shader_parameter/water_scatter_color = Color(0, 0.7214229, 0.16322586, 1)
 shader_parameter/air_bubble_color = Color(0.051137596, 0.1046041, 0.1660657, 1)
 shader_parameter/water_color = Color(6.016344e-08, 0.084236346, 0.28202173, 1)
-shader_parameter/height_scale = 19.159999571735682
+shader_parameter/height_scale = 19.15999957173568
 shader_parameter/k2 = 6.349999858064801
 shader_parameter/k3 = 0.35
 shader_parameter/k4 = 2.15
@@ -57,7 +57,7 @@ shader_parameter/amp_mod = 1.0
 shader_parameter/cutoff_dist = 1000.0
 shader_parameter/cutoff_strength = 0.0007
 
-[sub_resource type="PlaneMesh" id="PlaneMesh_8adiu"]
+[sub_resource type="PlaneMesh" id="PlaneMesh_g538k"]
 material = SubResource("ShaderMaterial_8adiu")
 size = Vector2(8000, 8000)
 subdivide_width = 512
@@ -72,7 +72,7 @@ shader_parameter/m = 25.0
 shader_parameter/shiftClamp = Vector2(0.01, 0.96)
 shader_parameter/epsilon = 1e-05
 shader_parameter/size = Vector2(8000, 8000)
-shader_parameter/time = 1119.7372
+shader_parameter/time = 3.0537758
 shader_parameter/waveCount = 42
 shader_parameter/water_scatter_color = Color(3.9731682e-07, 0.2691544, 0.17736207, 1)
 shader_parameter/air_bubble_color = Color(0.025494535, 5.2943824e-07, 0.22141749, 1)
@@ -134,15 +134,14 @@ environment = SubResource("Environment_6kuhc")
 transform = Transform3D(-0.9993919, 0.014859379, 0.03157799, 7.910258e-08, -0.9048261, 0.425779, 0.034899496, 0.42551947, 0.90427536, 0, 6.89, 0)
 
 [node name="Water" type="MeshInstance3D" parent="."]
-mesh = SubResource("PlaneMesh_8adiu")
+mesh = SubResource("PlaneMesh_g538k")
 skeleton = NodePath("")
 script = ExtResource("3_hgp32")
-Time = 1626.1804
+Time = 99.720474
 _sumOfSinesMat = SubResource("ShaderMaterial_8adiu")
 _sumOfSinesTextureMat = SubResource("ShaderMaterial_kxn0a")
 size = Vector2(8000, 8000)
 subdivide = 512
-simulate = true
 baseAmplitude = 10.0
 baseFrequency = 0.02
 phase_modifier = 2.0
