@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://d0xrj81fe0d0g"
+path="res://.godot/imported/sinwave_texgen.glsl-76b79eb3ad9df1881469e6cb274399f9.res"
+
+[deps]
+
+source_file="res://assets/Shaders/Compute/GLSL/sinwave_texgen.glsl"
+dest_files=["res://.godot/imported/sinwave_texgen.glsl-76b79eb3ad9df1881469e6cb274399f9.res"]
+
+[params]
+

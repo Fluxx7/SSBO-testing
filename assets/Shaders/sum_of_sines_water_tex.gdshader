@@ -5,7 +5,7 @@ render_mode world_vertex_coords, shadows_disabled;
 #include "water_algorithms.gdshaderinc"
 
 group_uniforms managed;
-uniform sampler2D wave_texture;
+global uniform sampler2D waveTexture;
 uniform uint waveCount;
 global uniform vec3 camera_coords;
 group_uniforms;
@@ -52,7 +52,7 @@ void vertex() {
 	vec2 prev_derivs = vec2(0.0);
 	vec2 uv = VERTEX.xz;
 	for (uint i = 0u; i < waveCount; i++) {
-		Wave w = get_wave(i, wave_texture);
+		Wave w = get_wave(i, waveTexture);
 		w.amplitude *= amp_mod;
 		prev_derivs = w.amplitude* wave_derivatives(uv, w);
 		uv += -prev_derivs * w.direction * w.amplitude * deriv_displacement_mult;
@@ -78,7 +78,7 @@ void fragment() {
 	vec2 prev_derivs = vec2(0.0);
 	vec2 uv = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xz;
 	for (uint i = 0u; i < waveCount; i++) {
-		Wave w = get_wave(i, wave_texture);
+		Wave w = get_wave(i, waveTexture);
 		w.amplitude *= amp_mod;
 		prev_derivs = w.amplitude * wave_derivatives(uv, w);
 		uv += -prev_derivs * w.direction * w.amplitude * deriv_displacement_mult;

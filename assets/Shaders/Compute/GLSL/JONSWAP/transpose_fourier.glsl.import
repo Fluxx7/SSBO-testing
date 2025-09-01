@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://qeq8hst520u6"
+path="res://.godot/imported/transpose_fourier.glsl-383bf48c83622595b06e0409d87cdcd5.res"
+
+[deps]
+
+source_file="res://assets/Shaders/Compute/GLSL/JONSWAP/transpose_fourier.glsl"
+dest_files=["res://.godot/imported/transpose_fourier.glsl-383bf48c83622595b06e0409d87cdcd5.res"]
+
+[params]
+

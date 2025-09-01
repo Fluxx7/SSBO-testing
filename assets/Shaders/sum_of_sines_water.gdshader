@@ -4,28 +4,17 @@ render_mode world_vertex_coords, shadows_disabled;
 #include "sine_funcs.gdshaderinc"
 #include "water_algorithms.gdshaderinc"
 
-#define WAVE_COUNT 42u
-#define USE_SSBO true
-
 group_uniforms managed;
 global uniform vec3 camera_coords;
 group_uniforms;
 
-
-
-#if USE_SSBO
 buffer restrict in {
-	Wave wave_array[WAVE_COUNT];
+	Wave wave_array[42];
 }(bindname = waveBuffer, format = std430);
-#else
-buffer uniform restrict {
-	Wave wave_array[WAVE_COUNT];
-}(bindname = waveBuffer);
-#endif
 
 group_uniforms toggles;
 uniform bool use_derivative_displacement = true;
-uniform bool useVertexShift = false;
+uniform bool useVertexShift = true;
 group_uniforms;
 
 

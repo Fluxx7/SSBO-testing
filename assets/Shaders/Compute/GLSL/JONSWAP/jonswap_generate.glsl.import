@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://dxl1db5x4es5f"
+path="res://.godot/imported/jonswap_generate.glsl-b218ba90166bc5ba20d7070c036ebf00.res"
+
+[deps]
+
+source_file="res://assets/Shaders/Compute/GLSL/JONSWAP/jonswap_generate.glsl"
+dest_files=["res://.godot/imported/jonswap_generate.glsl-b218ba90166bc5ba20d7070c036ebf00.res"]
+
+[params]
+

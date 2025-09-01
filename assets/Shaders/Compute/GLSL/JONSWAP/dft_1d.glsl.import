@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://b0dfl7kj6a330"
+path="res://.godot/imported/dft_1d.glsl-3f7c1fff5e5f8e0d5ceb4a74b05c3cae.res"
+
+[deps]
+
+source_file="res://assets/Shaders/Compute/GLSL/JONSWAP/dft_1d.glsl"
+dest_files=["res://.godot/imported/dft_1d.glsl-3f7c1fff5e5f8e0d5ceb4a74b05c3cae.res"]
+
+[params]
+

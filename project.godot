@@ -21,7 +21,6 @@ file_logging/enable_file_logging=true
 
 [display]
 
-window/size/mode=2
 window/vsync/vsync_mode=0
 
 [dotnet]
@@ -33,4 +32,8 @@ project/assembly_name="GraphicsTesting"
 camera_coords={
 "type": "vec3",
 "value": Vector3(0, 0, 0)
+}
+waveTexture={
+"type": "sampler2D",
+"value": ""
 }
