@@ -17,17 +17,6 @@ uniform bool use_derivative_displacement = true;
 uniform bool useVertexShift = true;
 group_uniforms;
 
-
-float wave_displacement(vec2 uv, Wave w) {
-	return expsine(uv, w);
-}
-
-vec2 wave_derivatives(vec2 uv, Wave w) {
-	return d_expsine(uv, w);
-}
-
-
-uniform float amp_mod = 1.0;
 uniform float cutoff_dist : hint_range(0.0, 8000.0, 10.0) = 1000.0;
 uniform float cutoff_strength : hint_range(0.0, 0.005, 0.0001) = 0.0007;
 
@@ -43,11 +32,10 @@ void vertex() {
 	vec2 uv = VERTEX.xz;
 	for (int i = 0; i < wave_array.length(); i++) {
 		Wave w = wave_array[i];
-		w.amplitude *= amp_mod;
-		prev_derivs = w.amplitude* wave_derivatives(uv, w);
+		float x = 0.0;
+		displacement += w.amplitude*expsine(uv,w, x);
+		prev_derivs = w.amplitude * d_expsine(uv, w, x);
 		uv += -prev_derivs * w.direction * w.amplitude * 1.7;
-
-		displacement += w.amplitude*wave_displacement(uv,w);
 	}
 
 	if (use_derivative_displacement) {
@@ -69,13 +57,12 @@ void fragment() {
 	vec2 uv = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xz;
 	for (int i = 0; i < wave_array.length(); i++) {
 		Wave w = wave_array[i];
-		w.amplitude *= amp_mod;
-		prev_derivs = w.amplitude * wave_derivatives(uv, w);
+		float x = 0.0;
+		displacement += w.amplitude*expsine(uv,w, x);
+		prev_derivs = w.amplitude * d_expsine(uv, w, x);
 		uv += -prev_derivs * w.direction * w.amplitude * 1.7;
 
 		derivatives += prev_derivs;
-		displacement += w.amplitude*wave_displacement(uv,w);
-
 	}
 
 	wave_height = displacement;

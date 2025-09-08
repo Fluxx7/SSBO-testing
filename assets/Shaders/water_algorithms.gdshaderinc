@@ -48,9 +48,10 @@ void brdf_lighting(in vec3 light, in vec3 light_color, in vec3 view, in mat4 vie
 	vec3 macronormal = normalize(view_matrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz;
 	float height = max(0.0, wave_height);
 	
-	
-	float NdotL = dotclamped(macronormal, light);
+	float NdotLun = dot(macronormal, light);
+	float NdotL = max(NdotLun, 2e-5);
 	float NdotV = dotclamped(macronormal, view);
+	
 	float light_mask = smith_masking_shadowing(NdotL, REFLECTANCE);
 	float view_mask = smith_masking_shadowing(NdotV, REFLECTANCE);
 	
@@ -59,19 +60,19 @@ void brdf_lighting(in vec3 light, in vec3 light_color, in vec3 view, in mat4 vie
 	
 	 
 	vec3 upper_specular_term = light_color * fresnel * distribution;
-	float lower_specular_term = 4.0 * dotclamped(macronormal, view) * (1.0 + light_mask + view_mask);
+	float lower_specular_term = 4.0 * NdotV * (1.0 + light_mask + view_mask);
 	specular += upper_specular_term / lower_specular_term;
 	
 	float height_dot = dotpos(light, -view);
 	float height_dot_pow4 = height_dot * height_dot * height_dot * height_dot;
 	
-	float height_term2 = fma(-0.5, dot(light, macronormal), 0.5);
+	float height_term2 = fma(-0.5, NdotLun, 0.5);
 	float height_term2_pow3 = height_term2 * height_term2 * height_term2;
 	
-	float light_reflection_scatter = dotpos(view, macronormal) * dotpos(view, macronormal)  * k2;
+	float light_reflection_scatter = NdotV * NdotV  * k2;
 	
 	vec3 diffuse_out = fma(height_scale * height, height_dot_pow4 * height_term2_pow3, light_reflection_scatter) * water_scatter_color.rgb * light_color / (1.0 + light_mask);
-	diffuse_out += fma(k3 * dotpos(light, macronormal) * water_scatter_color.rgb, light_color, k4 * air_bubble_color.rgb * air_bubble_density * light_color);
+	diffuse_out += fma(k3 * max(NdotLun, 0.0) * water_scatter_color.rgb, light_color, k4 * air_bubble_color.rgb * air_bubble_density * light_color);
 	diffuse_out *= (1.0 - fresnel);
 	diffuse += diffuse_out;
 	

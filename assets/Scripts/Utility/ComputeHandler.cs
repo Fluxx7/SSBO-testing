@@ -1,11 +1,9 @@
-using System;
-using System.Net;
 using Godot;
 using Godot.Collections;
 
 namespace GraphicsTesting.assets.Scripts.Utility;
 
-public class ComputeHandler {
+public partial class ComputeHandler : GodotObject {
 	private RenderingDevice rd;
 	
 	// Values tied to each shader
@@ -33,6 +31,8 @@ public class ComputeHandler {
 			if (rd.ComputePipelineIsValid(pipeline.Value)) {
 				rd.FreeRid(pipeline.Value);
 			}
+
+			rd.FreeRid(shaders[pipeline.Key]);
 		}
 		foreach (var uniformSetArray in uniformSets) {
 			foreach (var uniformSet in uniformSetArray.Value) {
@@ -50,8 +50,33 @@ public class ComputeHandler {
 			rd.FreeRid(uniform.Value);
 		}
 	}
-	
-#region shader
+
+	public void Close() {
+		foreach (var pipeline in pipelines) {
+			if (rd.ComputePipelineIsValid(pipeline.Value)) {
+				rd.FreeRid(pipeline.Value);
+			}
+			rd.FreeRid(shaders[pipeline.Key]);
+		}
+		pipelines.Clear();
+		shaders.Clear();
+		foreach (var uniformSetArray in uniformSets) {
+			foreach (var uniformSet in uniformSetArray.Value) {
+				if (rd.UniformSetIsValid(uniformSet)) {
+					rd.FreeRid(uniformSet);
+				}
+			}
+			uniformSetArray.Value.Clear();
+		}
+		uniformSets.Clear();
+		foreach (var uniform in uniforms) {
+			rd.FreeRid(uniform.Value);
+		}
+		uniforms.Clear();
+		uniformSizes.Clear();
+	}
+
+	#region shader
 	public void AddShader(StringName shader, RDShaderFile shaderFile) {
 		if (pipelines.TryGetValue(shader, out var oldPipeline)) {
 			if (rd.ComputePipelineIsValid(oldPipeline)) {
@@ -67,9 +92,12 @@ public class ComputeHandler {
 
 		shaders[shader] = rd.ShaderCreateFromSpirV(shaderFile.GetSpirV());
 		pipelines[shader] = rd.ComputePipelineCreate(shaders[shader]);
-		shaderUniforms[shader] = new Array<Array<StringName>>();
-		uniformSets[shader] = new Array<Rid>();
+		if (!shaderUniforms.ContainsKey(shader)) {
+			shaderUniforms[shader] = new Array<Array<StringName>>();
+		}
+		uniformSets[shader] = new Array<Rid>(); 
 		uniformSetUniforms[shader] = new Array<Array<Rid>>();
+		
 	}
 
 	public bool HasShader(StringName shader) {
@@ -107,11 +135,14 @@ public class ComputeHandler {
 				};
 				new_uniform.AddId(uni_id);
 				set_uniforms.Add(new_uniform);
+				uniformSetUniforms[shader][(int)currSet][binding] = uni_id;
 				binding++;
 			}
 
 			if (rebuildSet) {
-				if (rd.UniformSetIsValid(uniformSets[shader][(int)currSet])) {
+				if (uniformSets[shader].Count < (int)currSet) {
+					uniformSets[shader].Resize((int)currSet);
+				} else if (rd.UniformSetIsValid(uniformSets[shader][(int)currSet])) {
 					rd.FreeRid(uniformSets[shader][(int)currSet]);
 				}
 
@@ -209,15 +240,21 @@ public class ComputeHandler {
 		if (shaderUniforms[shader][set].Count < binding + 1) {
 			shaderUniforms[shader][set].Resize(binding + 1);
 		}
+
+		if (!uniforms.ContainsKey(buffer)) {
+			GD.Print("Buffer " + buffer + " does not exist");
+			return;
+		}
 		shaderUniforms[shader][set][binding] = buffer;
 		if (uniformSets[shader].Count < set + 1) {
 			uniformSets[shader].Resize(set + 1);
 		}
 	}
 	
-	public void SetBuffer(StringName buffer, uint sizeBytes, byte[] values = null) {
+	public Rid SetBuffer(StringName buffer, uint sizeBytes, byte[] values = null) {
 		bool isUniform = uniformTypes[buffer] == RenderingDevice.UniformType.UniformBuffer;
-		if (sizeBytes != uniformSizes[buffer]) {
+		uint trueSizeBytes = isUniform ? sizeBytes + 16 - (sizeBytes % 16) : sizeBytes;
+		if (trueSizeBytes != uniformSizes[buffer]) {
 			if (uniforms[buffer].IsValid) {
 				rd.FreeRid(uniforms[buffer]);
 			}
@@ -225,14 +262,13 @@ public class ComputeHandler {
 			Rid newbuf;
 
 			if (isUniform) {
-				uint uniformSizeBytes = sizeBytes + 16 - (sizeBytes % 16);
 				if (values != null) {
-					newbuf = rd.UniformBufferCreate(uniformSizeBytes, values);
+					newbuf = rd.UniformBufferCreate(trueSizeBytes, values);
 				} else {
-					newbuf = rd.UniformBufferCreate(uniformSizeBytes);
+					newbuf = rd.UniformBufferCreate(trueSizeBytes);
 				}
 
-				uniformSizes[buffer] = (int)uniformSizeBytes;
+				uniformSizes[buffer] = (int)trueSizeBytes;
 			} else {
 				if (values != null) {
 					newbuf = rd.StorageBufferCreate(sizeBytes, values);
@@ -243,12 +279,14 @@ public class ComputeHandler {
 				uniformSizes[buffer] = (int) sizeBytes;
 			}
 			uniforms[buffer] = newbuf;
+			return newbuf;
 
-			
 		} else {
 			if (values != null) {
 				rd.BufferUpdate(uniforms[buffer], 0u, sizeBytes, values);
 			}
+
+			return new Rid();
 		}
 	}
 	

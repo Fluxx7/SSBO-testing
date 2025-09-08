@@ -104,6 +104,11 @@ public partial class Water : MeshInstance3D {
 		_material.SetShaderParameter("time", Time);
 	}
 
+	public override void _ExitTree() {
+		compHandler?.Close();
+		base._ExitTree();
+	}
+
 	#endregion
 
 	private void GenerateSineWaves() {
@@ -135,11 +140,15 @@ public partial class Water : MeshInstance3D {
 		}
 	}
 
-	private byte[] PushConstants() {
+	private byte[] PushConstants(bool newSeed = true) {
 		var rng = new RandomNumberGenerator();
 		byte[] pushConstants = new byte[16];
 		float[] seedMod = [rng.RandfRange(0f, 4f * Mathf.Pi)];
-		prevSeed = seedMod;
+		if (!newSeed) {
+			seedMod = prevSeed;
+		} else {
+			prevSeed = seedMod;
+		}
 		uint[] inputWaveCount = [waveCount];
 		Buffer.BlockCopy( inputWaveCount, 0, pushConstants, 0, sizeof(uint));
 		Buffer.BlockCopy( seedMod, 0, pushConstants, sizeof(uint), sizeof(float));
@@ -156,10 +165,18 @@ public partial class Water : MeshInstance3D {
 		}
 		
 		if (!compHandler.HasUniform("waveBuffer")) {
-			compHandler.CreateBuffer("waveBuffer", RenderingDevice.UniformType.StorageBuffer, 24 * waveCount, "buffer_gen", 0, 1);
+			RDUniform buffer = new RDUniform() {
+				UniformType = RenderingDevice.UniformType.StorageBuffer
+			};
+			buffer.AddId(compHandler.CreateBuffer("waveBuffer", RenderingDevice.UniformType.StorageBuffer, 24 * waveCount, "buffer_gen", 0, 1));
+			
+		} else {
+			Rid new_buf = compHandler.SetBuffer("waveBuffer", waveCount * 24);
+			if (new_buf.IsValid) {
+				
+			}
 		}
 		
-		compHandler.SetBuffer("waveBuffer", waveCount * 24);
 		compHandler.Dispatch("buffer_gen", waveCount / 2, 1, 1, pushConstants);
 		_material.SetShaderBufferRaw("waveBuffer", compHandler.GetBufferData("waveBuffer"));
 	}
@@ -195,15 +212,11 @@ public partial class Water : MeshInstance3D {
 		if (plane != null) return;
 		if (useBuffers) {
 			_material = _sumOfSinesMat;
-			if (!compHandler.HasUniform("waveBuffer")) {
-				GenerateWaveBuffer(PushConstants());
-			}
+			GenerateWaveBuffer(PushConstants(false));
 		} else {
 			_material = _sumOfSinesTextureMat;
 			_material.SetShaderParameter("waveCount", waveCount);
-			if (!compHandler.HasUniform("waveTexture")) {
-				GenerateWaveTexture(PushConstants());
-			}
+			GenerateWaveTexture(PushConstants(false));
 		}
 		plane = new() {
 			Size = size,

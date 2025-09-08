@@ -33,36 +33,6 @@ fog_depth_curve = 2.46228
 fog_depth_begin = 0.0
 fog_depth_end = 335.5
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_8adiu"]
-render_priority = 0
-shader = ExtResource("3_kxn0a")
-shader_parameter/wm = 0.99
-shader_parameter/k = 1.0
-shader_parameter/m = 25.0
-shader_parameter/shiftClamp = Vector2(0.01, 0.96)
-shader_parameter/epsilon = 1e-05
-shader_parameter/size = Vector2(8000, 8000)
-shader_parameter/time = 99.720474
-shader_parameter/water_scatter_color = Color(0, 0.7214229, 0.16322586, 1)
-shader_parameter/air_bubble_color = Color(0.051137596, 0.1046041, 0.1660657, 1)
-shader_parameter/water_color = Color(6.016344e-08, 0.084236346, 0.28202173, 1)
-shader_parameter/height_scale = 19.15999957173568
-shader_parameter/k2 = 6.349999858064801
-shader_parameter/k3 = 0.35
-shader_parameter/k4 = 2.15
-shader_parameter/air_bubble_density = 3.4
-shader_parameter/use_derivative_displacement = true
-shader_parameter/useVertexShift = true
-shader_parameter/amp_mod = 1.0
-shader_parameter/cutoff_dist = 1000.0
-shader_parameter/cutoff_strength = 0.0007
-
-[sub_resource type="PlaneMesh" id="PlaneMesh_g538k"]
-material = SubResource("ShaderMaterial_8adiu")
-size = Vector2(8000, 8000)
-subdivide_width = 512
-subdivide_depth = 512
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_kxn0a"]
 render_priority = 0
 shader = ExtResource("4_kxn0a")
@@ -72,7 +42,7 @@ shader_parameter/m = 25.0
 shader_parameter/shiftClamp = Vector2(0.01, 0.96)
 shader_parameter/epsilon = 1e-05
 shader_parameter/size = Vector2(8000, 8000)
-shader_parameter/time = 3.0537758
+shader_parameter/time = 29.75004
 shader_parameter/waveCount = 42
 shader_parameter/water_scatter_color = Color(3.9731682e-07, 0.2691544, 0.17736207, 1)
 shader_parameter/air_bubble_color = Color(0.025494535, 5.2943824e-07, 0.22141749, 1)
@@ -85,7 +55,35 @@ shader_parameter/air_bubble_density = 3.4
 shader_parameter/use_derivative_displacement = true
 shader_parameter/deriv_displacement_mult = 1.7
 shader_parameter/useVertexShift = true
-shader_parameter/amp_mod = 1.0
+shader_parameter/cutoff_dist = 1000.0
+shader_parameter/cutoff_strength = 0.0007
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_g538k"]
+material = SubResource("ShaderMaterial_kxn0a")
+size = Vector2(8000, 8000)
+subdivide_width = 512
+subdivide_depth = 512
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8adiu"]
+render_priority = 0
+shader = ExtResource("3_kxn0a")
+shader_parameter/wm = 0.99
+shader_parameter/k = 1.0
+shader_parameter/m = 25.0
+shader_parameter/shiftClamp = Vector2(0.01, 0.96)
+shader_parameter/epsilon = 1e-05
+shader_parameter/size = Vector2(8000, 8000)
+shader_parameter/time = 12.804642
+shader_parameter/water_scatter_color = Color(0, 0.72156864, 0.16470589, 1)
+shader_parameter/air_bubble_color = Color(0.050980393, 0.105882354, 0.16470589, 1)
+shader_parameter/water_color = Color(6.016344e-08, 0.084236346, 0.28202173, 1)
+shader_parameter/height_scale = 21.0999995283728
+shader_parameter/k2 = 13.51999969780096
+shader_parameter/k3 = 5.419999878852161
+shader_parameter/k4 = 4.749999893828001
+shader_parameter/air_bubble_density = 3.4
+shader_parameter/use_derivative_displacement = true
+shader_parameter/useVertexShift = true
 shader_parameter/cutoff_dist = 1000.0
 shader_parameter/cutoff_strength = 0.0007
 
@@ -123,7 +121,7 @@ text = "Regenerate Mesh
 "
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(-0.999925, 0.0043383036, -0.011420662, 0, 0.93482566, 0.3551069, 0.012216887, 0.3550805, -0.9347557, 0, 59.9, 0)
+transform = Transform3D(-0.9981344, 0.008354909, -0.06047415, 0, 0.99059075, 0.1368567, 0.06104856, 0.13660146, -0.98874295, 0.0076758233, 71.155525, 0.6282498)
 current = true
 script = ExtResource("1_8adiu")
 
@@ -137,14 +135,16 @@ transform = Transform3D(-0.9993919, 0.014859379, 0.03157799, 7.910258e-08, -0.90
 mesh = SubResource("PlaneMesh_g538k")
 skeleton = NodePath("")
 script = ExtResource("3_hgp32")
-Time = 99.720474
+Time = 29.75004
 _sumOfSinesMat = SubResource("ShaderMaterial_8adiu")
 _sumOfSinesTextureMat = SubResource("ShaderMaterial_kxn0a")
 size = Vector2(8000, 8000)
 subdivide = 512
+useBuffers = false
+simulate = true
 baseAmplitude = 10.0
 baseFrequency = 0.02
-phase_modifier = 2.0
+phase_modifier = 1.5
 
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/Button" to="Water" method="RegenerateWaves"]
 [connection signal="toggled" from="CanvasLayer/VBoxContainer/CheckButton" to="Water" method="ToggleBuffers"]

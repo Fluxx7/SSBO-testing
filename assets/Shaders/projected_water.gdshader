@@ -1,57 +1,62 @@
 shader_type spatial;
 render_mode world_vertex_coords, shadows_disabled;
-#include "vertex_shift.gdshaderinc"
 #include "sine_funcs.gdshaderinc"
 #include "water_algorithms.gdshaderinc"
 
-group_uniforms managed;
-global uniform sampler2D waveTexture;
-uniform uint waveCount;
-global uniform vec3 camera_coords;
+group_uniforms grid_projection;
+uniform bool useCameraCoords;
+uniform vec4 upperPlane;
+uniform vec4 lowerPlane = vec4(0.0);
 group_uniforms;
+
+global uniform vec3 view_forward;
+global uniform vec3 camera_coords;
+
+void projectGrid(inout vec3 vertex, vec3 camera_view, vec3 camera_pos) {
+	vec3 true_view = vertex - camera_pos;
+	if (true_view.y >= 0.0) {
+		true_view.y = -2e-5;
+	}
+	float dist_mult = ( lowerPlane.y - vertex.y ) / true_view.y;
+	vertex += true_view * dist_mult;
+}
+
+buffer restrict in {
+	Wave wave_array[42];
+}(bindname = waveBuffer, format = std430);
 
 group_uniforms toggles;
 uniform bool use_derivative_displacement = true;
-uniform float deriv_displacement_mult : hint_range(0.0, 10.0, 0.1) = 1.7;
 uniform bool useVertexShift = true;
 group_uniforms;
 
-
-
-Wave get_wave(uint index, sampler2D waves){
-    float tex_width = float(waveCount);
-    vec2 uv0 = vec2((float(index) + 0.5) / tex_width, 0.25); // y = 0th row
-    vec2 uv1 = vec2((float(index) + 0.5) / tex_width, 0.75); // y = 1st row
-    vec3 p0 = texture(waves, uv0).rgb;
-    vec3 p1 = texture(waves, uv1).rgb;
-    return Wave(vec2(p0.r, p0.g), p1.r, p1.g, p1.b);
-}
-
-
 uniform float cutoff_dist : hint_range(0.0, 8000.0, 10.0) = 1000.0;
 uniform float cutoff_strength : hint_range(0.0, 0.005, 0.0001) = 0.0007;
- 
+
+
 void vertex() {
-	if (useVertexShift) {
-		VERTEX.xz += xzShift(VERTEX, camera_coords, NODE_POSITION_WORLD);
-	}
-
-	float dist_factor = clamp(exp(-(length(VERTEX.xz - CAMERA_POSITION_WORLD.xz) - cutoff_dist)*cutoff_strength), 0.05, 1.0);
-
+	vec3 localVert = VERTEX;
+	projectGrid(localVert, -view_forward, camera_coords);
+	
+	float dist_factor = clamp(exp(-(length(localVert.xz - CAMERA_POSITION_WORLD.xz) - cutoff_dist)*cutoff_strength), 0.05, 1.0);
 	float displacement = 0.0;
+	float ampTotal = 0.0;
 	vec2 prev_derivs = vec2(0.0);
-	vec2 uv = VERTEX.xz;
-	for (uint i = 0u; i < waveCount; i++) {
-		Wave w = get_wave(i, waveTexture);
+	vec2 uv = localVert.xz;
+	for (int i = 0; i < wave_array.length(); i++) {
+		Wave w = wave_array[i];
 		float x = 0.0;
 		displacement += w.amplitude*expsine(uv,w, x);
+		ampTotal += w.amplitude;
 		prev_derivs = w.amplitude * d_expsine(uv, w, x);
-		uv += -prev_derivs * w.direction * w.amplitude * deriv_displacement_mult;
+		uv += -prev_derivs * w.direction * w.amplitude * 1.7;
 	}
+
 	if (use_derivative_displacement) {
-		VERTEX.xz = uv;
+		localVert.xz = uv;
 	}
-	VERTEX.y = displacement * dist_factor;// * distance_factor;
+	localVert.y += displacement * dist_factor;// / ampTotal;
+	VERTEX = localVert;
 
 }
 
@@ -61,22 +66,23 @@ uniform vec4 water_color : source_color = vec4(0.1, 0.18, 0.35, 1.0);
 group_uniforms;
 void fragment() {
 	float dist = length(VERTEX.xz);
-
 	vec2 derivatives = vec2(0.0);
 	float displacement = 0.0;
+	float totalAmp = 0.0;
 	vec2 prev_derivs = vec2(0.0);
 	vec2 uv = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xz;
-	for (uint i = 0u; i < waveCount; i++) {
-		Wave w = get_wave(i, waveTexture);
+	for (int i = 0; i < wave_array.length(); i++) {
+		Wave w = wave_array[i];
 		float x = 0.0;
 		displacement += w.amplitude*expsine(uv,w, x);
+		totalAmp += w.amplitude;
 		prev_derivs = w.amplitude * d_expsine(uv, w, x);
-		uv += -prev_derivs * w.direction * w.amplitude * deriv_displacement_mult;
+		uv += -prev_derivs * w.direction * w.amplitude * 1.7;
 
 		derivatives += prev_derivs;
-
 	}
-	wave_height = displacement;
+
+	wave_height = displacement;// / totalAmp;
 	ALBEDO = water_color.rgb;
 
 	vec3 model_normal = vec3(-derivatives.x, 1.0, -derivatives.y);
@@ -84,12 +90,14 @@ void fragment() {
 
 	NORMAL = normalize(VIEW_MATRIX * vec4(model_normal, 0.0)).xyz;
 
-	
-	ROUGHNESS = 0.0;
+
+	ROUGHNESS = 0.02;
 }
 
 
 
-void light() { 	
+void light() {
 	brdf_lighting(LIGHT, LIGHT_COLOR, VIEW, VIEW_MATRIX, NORMAL, vec2(0.0), wave_height, SPECULAR_LIGHT, DIFFUSE_LIGHT);
 }
+
+

@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="GraphicsTesting dev"
-run/main_scene="uid://c7j36bvqcqrso"
+run/main_scene="uid://5dnjrc1mtkee"
 config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -36,4 +36,16 @@ camera_coords={
 waveTexture={
 "type": "sampler2D",
 "value": ""
+}
+normalMap={
+"type": "sampler2D",
+"value": ""
+}
+heightMap={
+"type": "sampler2D",
+"value": ""
+}
+view_forward={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
 }

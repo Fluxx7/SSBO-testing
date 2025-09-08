@@ -9,13 +9,13 @@ struct Wave{
 	float phase;
 };
 
-float expsine(vec2 uv, Wave w) {
-	return exp(sin(dot(w.direction, uv)*w.frequency+w.phase*time)-1.0);
+float expsine(vec2 uv, Wave w, out float x) {
+	float phase_time = w.phase*time;
+	x = dot(w.direction, uv)*w.frequency+phase_time;
+	return exp(sin(x)-1.0);
 }
 
-vec2 d_expsine(vec2 uv, Wave w) {
-	float phase_time = w.phase*time;
-	float x = dot(w.direction, uv)*w.frequency+phase_time;
-	vec2 d_sin = w.direction * w.frequency * cos(x) * expsine(uv, w);
+vec2 d_expsine(vec2 uv, Wave w, float x) {
+	vec2 d_sin = w.direction * w.frequency * cos(x) * exp(sin(x)-1.0);
 	return d_sin;
 }
