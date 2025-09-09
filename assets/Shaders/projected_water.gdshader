@@ -12,7 +12,7 @@ group_uniforms;
 global uniform vec3 view_forward;
 global uniform vec3 camera_coords;
 
-void projectGrid(inout vec3 vertex, vec3 camera_view, vec3 camera_pos) {
+void projectGrid(inout vec3 vertex, vec3 camera_pos) {
 	vec3 true_view = vertex - camera_pos;
 	if (true_view.y >= 0.0) {
 		true_view.y = -2e-5;
@@ -36,7 +36,7 @@ uniform float cutoff_strength : hint_range(0.0, 0.005, 0.0001) = 0.0007;
 
 void vertex() {
 	vec3 localVert = VERTEX;
-	projectGrid(localVert, -view_forward, camera_coords);
+	projectGrid(localVert, camera_coords);
 	
 	float dist_factor = clamp(exp(-(length(localVert.xz - CAMERA_POSITION_WORLD.xz) - cutoff_dist)*cutoff_strength), 0.05, 1.0);
 	float displacement = 0.0;

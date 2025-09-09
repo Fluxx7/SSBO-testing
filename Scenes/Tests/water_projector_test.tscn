@@ -1,7 +1,7 @@
 [gd_scene load_steps=10 format=3 uid="uid://5dnjrc1mtkee"]
 
 [ext_resource type="Script" uid="uid://cky6u0t1f7a7w" path="res://assets/Scripts/Utility/FPSLabel.cs" id="1_ll4tb"]
-[ext_resource type="Script" uid="uid://8560q4g3mplt" path="res://assets/Scripts/Utility/DensityTarget.cs" id="2_co6y1"]
+[ext_resource type="Script" uid="uid://b14j8uj81cqh4" path="res://assets/Scripts/Utility/ControllableCamera.cs" id="2_ibidv"]
 [ext_resource type="Shader" uid="uid://tbs8gbdmob38" path="res://assets/Shaders/projected_water.gdshader" id="3_ibidv"]
 [ext_resource type="Script" uid="uid://bp1130rsf0ptp" path="res://assets/Scripts/Utility/WaterProjector.cs" id="6_gfvqk"]
 
@@ -34,7 +34,7 @@ fog_depth_end = 335.5
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ibidv"]
 render_priority = 0
 shader = ExtResource("3_ibidv")
-shader_parameter/time = 1265.3881
+shader_parameter/time = 41375.21
 shader_parameter/water_scatter_color = Color(0, 0.72156864, 0.16470589, 1)
 shader_parameter/air_bubble_color = Color(0.050980393, 0.105882354, 0.16470589, 1)
 shader_parameter/water_color = Color(0, 0.08235294, 0.28235295, 1)
@@ -54,9 +54,9 @@ shader_parameter/cutoff_strength = 0.0007
 [sub_resource type="PlaneMesh" id="PlaneMesh_ibidv"]
 material = SubResource("ShaderMaterial_ibidv")
 flip_faces = true
-size = Vector2(2.8646877, 1.7725255)
+size = Vector2(1.5005507, 0.8440598)
 subdivide_width = 256
-subdivide_depth = 192
+subdivide_depth = 256
 
 [node name="Node3D" type="Node3D"]
 
@@ -81,10 +81,10 @@ layout_mode = 2
 text = "Regenerate Waves
 "
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(-0.99897057, 0.018306036, -0.041505337, 0, 0.91495967, 0.40354532, 0.045363024, 0.4031299, -0.9140178, 0, 70.416, 0)
+[node name="PlayerCam" type="Camera3D" parent="."]
+transform = Transform3D(-0.9991228, -0.015551275, 0.038880955, 0, 0.9284858, 0.3713678, -0.04187566, 0.3710421, -0.9276713, 0.01, 88.7, 0)
 current = true
-script = ExtResource("2_co6y1")
+script = ExtResource("2_ibidv")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_6kuhc")
@@ -92,19 +92,16 @@ environment = SubResource("Environment_6kuhc")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment"]
 transform = Transform3D(-0.9993919, 0.014859379, 0.03157799, 7.910258e-08, -0.9048261, 0.425779, 0.034899496, 0.42551947, 0.90427536, 0, 6.89, 0)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." node_paths=PackedStringArray("camera")]
-transform = Transform3D(0.9989704, 0.041505028, -0.018305643, -8.2151264e-10, -0.40353662, -0.91495293, -0.04536302, 0.91401106, -0.4031212, 0.022827936, 70.19405, 0.5027098)
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." node_paths=PackedStringArray("Camera", "DummyCamera")]
+transform = Transform3D(-0.9991225, -0.038880806, -0.015551212, 0, -0.37136424, 0.92847687, -0.04187589, 0.9276624, 0.37103847, -0.01138453, 108.49574, 0.5102193)
+custom_aabb = AABB(-10000, -10000, -10000, 20000, 20000, 20000)
 mesh = SubResource("PlaneMesh_ibidv")
 script = ExtResource("6_gfvqk")
-subdivide = Vector2i(192, 256)
-camera = NodePath("../Camera3D")
-scatterColor = Color(0, 0.72156864, 0.16470589, 1)
-bubbleColor = Color(0.050980393, 0.105882354, 0.16470589, 1)
-waterColor = Color(0, 0.08235294, 0.28235295, 1)
-heightScale = 21.1
-k2 = 13.52
-k3 = 5.42
-k4 = 4.75
-bubbleDensity = 3.4
+Camera = NodePath("../PlayerCam")
+DummyCamera = NodePath("../ProjectorDummy")
+ProjectorElevation = 20.0
+
+[node name="ProjectorDummy" type="Camera3D" parent="."]
+transform = Transform3D(-0.9991228, -0.015551362, 0.038881183, 0, 0.9284858, 0.3713678, -0.041875903, 0.37104204, -0.9276713, 0.01, 108.7, 0)
 
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/Button" to="MeshInstance3D" method="RegenerateWaves"]

@@ -10,17 +10,14 @@ namespace GraphicsTesting.assets.Scripts.Utility;
  * https://fileadmin.cs.lth.se/graphics/theses/projects/projgrid/projgrid-hq.pdf
  */
 [Tool]
-public partial class WaterProjector : MeshInstance3D {
+public partial class AlignedGridWater : MeshInstance3D {
 	private ShaderMaterial _shader;
 	[Export] public Vector2I Subdivide = new(256, 256);
 	private Vector2I _prevSubdivide;
 	[Export] public Camera3D Camera;
-	[Export] public Camera3D DummyCamera;
-	[Export] public float ProjectorElevation = 10f;
-	[Export] public float ProjectorMinimumHeight = 70f;
 	private float _prevCameraFov;
 	[Export] public uint WaveCount = 42u;
-	private bool _simulate = true;
+	[Export] public bool Simulate = true;
 
 	[ExportGroup("Shader Parameters")] 
 	
@@ -126,19 +123,12 @@ public partial class WaterProjector : MeshInstance3D {
 	[ExportGroup("")]
 	[ExportToolButton("Regenerate Waves")]
 	private Callable RegenWaves => Callable.From(RegenerateWaves);
-	[ExportToolButton("Simulate")]
-	private Callable Simulate => Callable.From(() => (_simulate = !_simulate));
 
 	private ComputeHandler _compHandler = new();
 	private float _currentSeed;
 	private Vector3 _previousCameraLocation;
-	private Basis _previousCameraBasis;
 	private Vector3 _previousLocation;
 	private float _time;
-	private Transform3D _projectorTransform;
-	private Vector3 _projectorRotationDegrees;
-	private float _prevProjectorElevation;
-	private float _prevProjectorMinimumHeight;
 
 	public override void _Ready() {
 		_shader = new ShaderMaterial();
@@ -152,8 +142,6 @@ public partial class WaterProjector : MeshInstance3D {
 		_shader.SetShaderParameter("k3", K3);
 		_shader.SetShaderParameter("k4", K4);
 		_shader.SetShaderParameter("air_bubble_density", BubbleDensity);
-		Camera ??= GetViewport().GetCamera3D();
-		_projectorTransform = Camera.GlobalTransform;
 	}
 
 	/**
@@ -168,32 +156,26 @@ public partial class WaterProjector : MeshInstance3D {
 		/*
 		 * Need to determine the necessary extra size to add for the potential
 		 */
-		
+
 		Camera ??= GetViewport().GetCamera3D();
 
-		bool changed = false;
 		// align to camera
 		float near = Camera.Near + 0.5f;
 		if (Camera.GlobalTransform.Origin != _previousCameraLocation) {
 			_previousCameraLocation = Camera.GlobalTransform.Origin;
-			_projectorTransform.Origin = _previousCameraLocation;
-			_projectorTransform.Origin.Y += ProjectorElevation;
-			_projectorTransform.Origin.Y = float.Max(_projectorTransform.Origin.Y, ProjectorMinimumHeight);
-			RenderingServer.GlobalShaderParameterSet("camera_coords", _projectorTransform.Origin);
-			changed = true;
+			RenderingServer.GlobalShaderParameterSet("camera_coords", Camera.GlobalTransform.Origin);
 		}
-		Vector3 newPosition = _projectorTransform.Origin - _projectorTransform.Basis.Z * near;
-		if (newPosition != _previousLocation || _previousCameraBasis != Camera.GlobalBasis) {
+		Vector3 newPosition = Camera.GlobalTransform.Origin - Camera.GlobalTransform.Basis.Z * near;
+		if (newPosition != _previousLocation) {
 			_previousLocation = newPosition;
 			Position = newPosition;
-			_previousCameraBasis = Camera.GlobalBasis;
-			_projectorTransform.Basis = _previousCameraBasis;
-			
 			Vector3 camRotation = Camera.RotationDegrees;
-			_projectorRotationDegrees = camRotation;
+
 			/*
 			 * Restrict camRotation to only angles that can't see the horizon
 			 */
+			
+
 
 			if (camRotation.X >= 180f) {
 				camRotation -= new Vector3(90f, 0f, 0f);
@@ -204,7 +186,8 @@ public partial class WaterProjector : MeshInstance3D {
 			}
 
 			RotationDegrees = camRotation;
-			changed = true;
+
+			RenderingServer.GlobalShaderParameterSet("view_forward", -Camera.GlobalTransform.Basis.Z);
 		}
 
 
@@ -227,37 +210,13 @@ public partial class WaterProjector : MeshInstance3D {
 			};
 			_prevSubdivide = Subdivide;
 			Mesh.SurfaceSetMaterial(0, _shader);
-			changed = true;
-		}
-
-		if (Engine.IsEditorHint()) {
-			if (_prevProjectorMinimumHeight != ProjectorMinimumHeight || _prevProjectorElevation != ProjectorElevation) {
-				float old_value = _projectorTransform.Origin.Y;
-				_projectorTransform.Origin.Y += ProjectorElevation - _prevProjectorElevation;
-				_projectorTransform.Origin.Y = float.Max(_projectorTransform.Origin.Y, ProjectorMinimumHeight);
-				if (_projectorTransform.Origin.Y != old_value) {
-					RenderingServer.GlobalShaderParameterSet("camera_coords", _projectorTransform.Origin);
-				}
-				_prevProjectorMinimumHeight = ProjectorMinimumHeight;
-				_prevProjectorElevation = ProjectorElevation;
-				changed = true;
-			}
-			if (DummyCamera != null && changed) {
-				DummyCamera.GlobalTransform = _projectorTransform;
-				DummyCamera.RotationDegrees = _projectorRotationDegrees;
-			}
 		}
 
 
-		if (_simulate) {
+		if (Simulate) {
 			_time += (float)delta;
 			_shader.SetShaderParameter("time", _time);
 		}
-	}
-	
-	public override void _ExitTree() {
-		_compHandler?.Close();
-		base._ExitTree();
 	}
 
 	private byte[] GeneratePushConstants() {
