@@ -16,7 +16,7 @@ void main() {
     if (gl_GlobalInvocationID.x >= texSize) return;
     if (gl_GlobalInvocationID.y >= texSize) return;
     vec2 uv = vec2(gl_GlobalInvocationID.xy);
-    vec4 displacement = vec4(0.0);
+    vec4 displacement = vec4(0.0, 0.0, 0.0, 1.0);
     vec2 derivatives = vec2(0.0);
     for (int i = 0; i < waveCount; i++) {
         Wave w = waves[i];
@@ -25,7 +25,7 @@ void main() {
         derivatives += w.direction * w.frequency * cos(x) * base;
         displacement.y += base;
     }
-    vec4 normal = vec4(-derivatives.x, 1.0, -derivatives.y, 0.0);
+    vec4 normal = vec4(-derivatives.x, 1.0, -derivatives.y, 1.0);
    
     imageStore(heightTexture, ivec2(gl_GlobalInvocationID.xy), displacement);
     imageStore(normalTexture, ivec2(gl_GlobalInvocationID.xy), normal);

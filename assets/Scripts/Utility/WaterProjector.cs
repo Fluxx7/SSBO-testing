@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Godot;
 
 namespace GraphicsTesting.assets.Scripts.Utility;
@@ -16,6 +17,7 @@ public partial class WaterProjector : MeshInstance3D {
 	private Vector2I _prevSubdivide;
 	[Export] public Camera3D Camera;
 	[Export] public Camera3D DummyCamera;
+	[Export] public bool Overhead;
 	[Export] public float ProjectorElevation = 10f;
 	[Export] public float ProjectorMinimumHeight = 70f;
 	private float _prevCameraFov;
@@ -164,14 +166,23 @@ public partial class WaterProjector : MeshInstance3D {
 		if (!IsOnScreen()) {
 			return;
 		}
-
+		
 		/*
-		 * Need to determine the necessary extra size to add for the potential
+		 * New system
+		 * Needs to determine 4 points:
+		 *	the two furthest points where the camera's view frustum intersects the water plane
+		 *	the two closest points that would intersect the camera's view frustum at the maximum possible wave displacement from the water plane
+		 * A projector origin then needs to be determined that, when projecting the grid, would precisely reach these 4 points
+		 * Need to determine what restrictions are needed for a consistent solution
+		 * Maybe the origin of the projector is aligned on the XZ axes to the midpoint between the two close points
+		 * Then using the FOV of the camera, select the height and rotation to fill exactly the space needed
 		 */
+
 		
 		Camera ??= GetViewport().GetCamera3D();
 
 		bool changed = false;
+		
 		// align to camera
 		float near = Camera.Near + 0.5f;
 		if (Camera.GlobalTransform.Origin != _previousCameraLocation) {
@@ -206,6 +217,8 @@ public partial class WaterProjector : MeshInstance3D {
 			RotationDegrees = camRotation;
 			changed = true;
 		}
+		
+		
 
 
 		if (Mesh == null || _prevSubdivide != Subdivide || _prevCameraFov != Camera.Fov) {
@@ -229,6 +242,7 @@ public partial class WaterProjector : MeshInstance3D {
 			Mesh.SurfaceSetMaterial(0, _shader);
 			changed = true;
 		}
+		
 
 		if (Engine.IsEditorHint()) {
 			if (_prevProjectorMinimumHeight != ProjectorMinimumHeight || _prevProjectorElevation != ProjectorElevation) {

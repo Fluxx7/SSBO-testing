@@ -166,7 +166,7 @@ public partial class ComputeHandler : GodotObject {
 	}
 	
 	public void DispatchSubmit(StringName shader, uint xThreads, uint yThreads, uint zThreads, byte[] push_constants = null) {
-		Dispatch(shader, xThreads, yThreads, zThreads);
+		Dispatch(shader, xThreads, yThreads, zThreads, push_constants);
 		rd.Submit();
 	}
 
@@ -290,6 +290,11 @@ public partial class ComputeHandler : GodotObject {
 		}
 	}
 	
+	public Rid SetTexture(StringName texName, uint xSize, uint ySize, Image tex) {
+		rd.TextureUpdate(uniforms[texName], 0, tex.GetData());
+		return new Rid();
+	}
+	
 	
 	public byte[] GetBufferData(StringName buffer) {
 		if (uniformTypes[buffer] != RenderingDevice.UniformType.StorageBuffer) {
@@ -297,9 +302,22 @@ public partial class ComputeHandler : GodotObject {
 		}
 		return rd.BufferGetData(uniforms[buffer]);
 	}
+	
+	public void GetBufferDataAsync(StringName buffer, Callable callback) {
+		if (uniformTypes[buffer] != RenderingDevice.UniformType.StorageBuffer) {
+			return;
+		}
+		rd.BufferGetDataAsync(uniforms[buffer], callback);
+	}
 
 	public bool HasUniform(StringName buffer) {
 		return uniforms.ContainsKey(buffer);
 	}
-#endregion
+
+	public void UpdateSync() {
+		rd.Submit();
+		rd.Sync();
+	}
+
+	#endregion
 }

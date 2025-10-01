@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://bkrmkulc7pdst"
+path="res://.godot/imported/tessendorf_idft_2d.glsl-08f1728b0612ef559a10462841a80ec3.res"
+
+[deps]
+
+source_file="res://assets/Shaders/Compute/GLSL/JONSWAP/tessendorf_idft_2d.glsl"
+dest_files=["res://.godot/imported/tessendorf_idft_2d.glsl-08f1728b0612ef559a10462841a80ec3.res"]
+
+[params]
+

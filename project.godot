@@ -11,8 +11,8 @@ config_version=5
 [application]
 
 config/name="GraphicsTesting dev"
-run/main_scene="uid://5dnjrc1mtkee"
-config/features=PackedStringArray("4.5", "C#", "Forward Plus")
+run/main_scene="uid://8qxx4qgirqgb"
+config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [debug]
@@ -21,6 +21,8 @@ file_logging/enable_file_logging=true
 
 [display]
 
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 window/vsync/vsync_mode=0
 
 [dotnet]
@@ -33,19 +35,23 @@ camera_coords={
 "type": "vec3",
 "value": Vector3(0, 0, 0)
 }
+gradientMap={
+"type": "sampler2D",
+"value": ""
+}
+displacementMap={
+"type": "sampler2D",
+"value": ""
+}
 waveTexture={
 "type": "sampler2D",
 "value": ""
 }
-normalMap={
+spectrumTexture={
 "type": "sampler2D",
 "value": ""
 }
-heightMap={
+gaussian={
 "type": "sampler2D",
 "value": ""
-}
-view_forward={
-"type": "vec3",
-"value": Vector3(0, 0, 0)
 }

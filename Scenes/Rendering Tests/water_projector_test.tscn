@@ -34,7 +34,7 @@ fog_depth_end = 335.5
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ibidv"]
 render_priority = 0
 shader = ExtResource("3_ibidv")
-shader_parameter/time = 41375.21
+shader_parameter/time = 44719.355
 shader_parameter/water_scatter_color = Color(0, 0.72156864, 0.16470589, 1)
 shader_parameter/air_bubble_color = Color(0.050980393, 0.105882354, 0.16470589, 1)
 shader_parameter/water_color = Color(0, 0.08235294, 0.28235295, 1)
@@ -82,7 +82,7 @@ text = "Regenerate Waves
 "
 
 [node name="PlayerCam" type="Camera3D" parent="."]
-transform = Transform3D(-0.9991228, -0.015551275, 0.038880955, 0, 0.9284858, 0.3713678, -0.04187566, 0.3710421, -0.9276713, 0.01, 88.7, 0)
+transform = Transform3D(-0.9991228, -0.013425881, 0.039665055, 0, 0.94721025, 0.32061294, -0.04187566, 0.32033175, -0.94637936, 0, 50, 0)
 current = true
 script = ExtResource("2_ibidv")
 
@@ -93,15 +93,16 @@ environment = SubResource("Environment_6kuhc")
 transform = Transform3D(-0.9993919, 0.014859379, 0.03157799, 7.910258e-08, -0.9048261, 0.425779, 0.034899496, 0.42551947, 0.90427536, 0, 6.89, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." node_paths=PackedStringArray("Camera", "DummyCamera")]
-transform = Transform3D(-0.9991225, -0.038880806, -0.015551212, 0, -0.37136424, 0.92847687, -0.04187589, 0.9276624, 0.37103847, -0.01138453, 108.49574, 0.5102193)
+transform = Transform3D(-0.9991225, -0.0396649, -0.013425825, 0, -0.3206098, 0.9472012, -0.04187589, 0.9463703, 0.32032856, -0.021815782, 49.82366, 0.5205087)
 custom_aabb = AABB(-10000, -10000, -10000, 20000, 20000, 20000)
 mesh = SubResource("PlaneMesh_ibidv")
 script = ExtResource("6_gfvqk")
 Camera = NodePath("../PlayerCam")
 DummyCamera = NodePath("../ProjectorDummy")
-ProjectorElevation = 20.0
+ProjectorElevation = 0.0
+ProjectorMinimumHeight = 0.0
 
 [node name="ProjectorDummy" type="Camera3D" parent="."]
-transform = Transform3D(-0.9991228, -0.015551362, 0.038881183, 0, 0.9284858, 0.3713678, -0.041875903, 0.37104204, -0.9276713, 0.01, 108.7, 0)
+transform = Transform3D(-0.9991228, -0.013425957, 0.039665285, 0, 0.94721025, 0.32061297, -0.041875903, 0.32033172, -0.94637936, 0, 50, 0)
 
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/Button" to="MeshInstance3D" method="RegenerateWaves"]

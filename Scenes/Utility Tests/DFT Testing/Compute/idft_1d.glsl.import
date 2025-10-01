@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://db38ks1ydsqfd"
+path="res://.godot/imported/idft_1d.glsl-b005f8e4a339d2c3bd76da693ccf3fb0.res"
+
+[deps]
+
+source_file="res://Scenes/Utility Tests/DFT Testing/Compute/idft_1d.glsl"
+dest_files=["res://.godot/imported/idft_1d.glsl-b005f8e4a339d2c3bd76da693ccf3fb0.res"]
+
+[params]
+

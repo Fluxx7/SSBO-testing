@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://csusyf53du1dn"
+path="res://.godot/imported/gpt_jonswap.glsl-63a712fb51b79388aab5929068f3dd36.res"
+
+[deps]
+
+source_file="res://assets/Shaders/Compute/GLSL/JONSWAP/gpt_jonswap.glsl"
+dest_files=["res://.godot/imported/gpt_jonswap.glsl-63a712fb51b79388aab5929068f3dd36.res"]
+
+[params]
+

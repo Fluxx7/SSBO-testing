@@ -7,9 +7,12 @@
 [ext_resource type="Shader" uid="uid://bxwegidev13eg" path="res://assets/Shaders/sum_of_sines_water_tex.gdshader" id="4_kxn0a"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_g538k"]
-sky_top_color = Color(6.545782e-06, 0.52119046, 0.8231743, 1)
-sky_horizon_color = Color(0.9999997, 0.9987791, 0.8728872, 1)
-sky_curve = 0.016322862
+sky_top_color = Color(0.3627408, 0.7165806, 0.9999998, 1)
+sky_horizon_color = Color(0, 0.6270299, 0.9842225, 1)
+sky_curve = 0.008317559
+ground_bottom_color = Color(0.65001494, 0.83690965, 1, 1)
+ground_horizon_color = Color(4.6205523e-06, 0.63668895, 0.99894017, 1)
+ground_curve = 0.78793377
 sun_angle_max = 26.25
 sun_curve = 0.08615249
 
@@ -20,7 +23,6 @@ process_mode = 1
 [sub_resource type="Environment" id="Environment_6kuhc"]
 background_mode = 2
 sky = SubResource("Sky_kxn0a")
-sky_rotation = Vector3(0.05235988, 0, 0)
 ambient_light_source = 3
 ambient_light_color = Color(0.431282, 0.611583, 1, 1)
 tonemap_mode = 4
@@ -33,36 +35,37 @@ fog_depth_curve = 2.46228
 fog_depth_begin = 0.0
 fog_depth_end = 335.5
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_8adiu"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_g538k"]
 render_priority = 0
 shader = ExtResource("3_kxn0a")
 shader_parameter/wm = 0.99
 shader_parameter/k = 1.0
-shader_parameter/m = 25.0
-shader_parameter/shiftClamp = Vector2(0.01, 0.96)
+shader_parameter/m = 44.61
+shader_parameter/shiftClamp = Vector2(0.01, 0.8)
 shader_parameter/epsilon = 1e-05
 shader_parameter/size = Vector2(8000, 8000)
-shader_parameter/time = 58.896847
-shader_parameter/water_scatter_color = Color(0, 0.72156864, 0.16470589, 1)
-shader_parameter/air_bubble_color = Color(0.050980393, 0.105882354, 0.16470589, 1)
-shader_parameter/water_color = Color(0, 0.08235294, 0.28235295, 1)
-shader_parameter/height_scale = 21.0999995283728
-shader_parameter/k2 = 13.51999969780096
-shader_parameter/k3 = 5.419999878852161
-shader_parameter/k4 = 4.749999893828001
-shader_parameter/air_bubble_density = 3.4
-shader_parameter/use_derivative_displacement = true
+shader_parameter/time = 6141.3687
+shader_parameter/water_scatter_color = Color(0, 1.052, 0.212, 1)
+shader_parameter/air_bubble_color = Color(0.157, 0.063, 0.827, 1)
+shader_parameter/water_color = Color(0, 0.086, 0.204, 1)
+shader_parameter/height_scale = 1.07999997585984
+shader_parameter/k2 = 1.80999995954288
+shader_parameter/k3 = 0.51999998837696
+shader_parameter/k4 = 0.1999999955296
+shader_parameter/air_bubble_density = 1.3199999704953602
+shader_parameter/use_derivative_displacement = false
 shader_parameter/useVertexShift = true
 shader_parameter/cutoff_dist = 1000.0
 shader_parameter/cutoff_strength = 0.0007
+shader_parameter/chopMod = 0.23
 
-[sub_resource type="PlaneMesh" id="PlaneMesh_g538k"]
-material = SubResource("ShaderMaterial_8adiu")
+[sub_resource type="PlaneMesh" id="PlaneMesh_laryo"]
+material = SubResource("ShaderMaterial_g538k")
 size = Vector2(8000, 8000)
-subdivide_width = 512
-subdivide_depth = 512
+subdivide_width = 1024
+subdivide_depth = 1024
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_kxn0a"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ho8b5"]
 render_priority = 0
 shader = ExtResource("4_kxn0a")
 shader_parameter/wm = 0.99
@@ -70,11 +73,11 @@ shader_parameter/k = 1.0
 shader_parameter/m = 25.0
 shader_parameter/shiftClamp = Vector2(0.01, 0.96)
 shader_parameter/epsilon = 1e-05
-shader_parameter/size = Vector2(8000, 8000)
-shader_parameter/time = 36.29871
-shader_parameter/waveCount = 42
-shader_parameter/water_scatter_color = Color(3.9731682e-07, 0.2691544, 0.17736207, 1)
-shader_parameter/air_bubble_color = Color(0.025494535, 5.2943824e-07, 0.22141749, 1)
+shader_parameter/size = Vector2(2000, 2000)
+shader_parameter/time = 0.0
+shader_parameter/waveCount = 0
+shader_parameter/water_scatter_color = Color(0.4, 1.15, 0.85, 1)
+shader_parameter/air_bubble_color = Color(0.1, 0.18, 0.27, 1)
 shader_parameter/water_color = Color(0.1, 0.18, 0.35, 1)
 shader_parameter/height_scale = 2.5
 shader_parameter/k2 = 2.25
@@ -93,7 +96,6 @@ shader_parameter/cutoff_strength = 0.0007
 follow_viewport_enabled = true
 
 [node name="Label" type="Label" parent="CanvasLayer"]
-anchors_preset = -1
 offset_left = 397.0
 offset_top = 2.0
 offset_right = 763.0
@@ -101,7 +103,6 @@ offset_bottom = 31.0
 script = ExtResource("1_g538k")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer"]
-anchors_preset = -1
 offset_right = 396.0
 offset_bottom = 239.0
 
@@ -112,6 +113,7 @@ text = "Regenerate Waves
 
 [node name="CheckButton" type="CheckButton" parent="CanvasLayer/VBoxContainer"]
 layout_mode = 2
+button_pressed = true
 text = "Use Buffers
 "
 
@@ -121,29 +123,33 @@ text = "Regenerate Mesh
 "
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(-0.9981344, 0.008354909, -0.06047415, 0, 0.99059075, 0.1368567, 0.06104856, 0.13660146, -0.98874295, 0.0076758233, 71.155525, 0.6282498)
+transform = Transform3D(0.09410832, 0.13683455, -0.9861133, 0, 0.99050933, 0.13744451, 0.9955615, -0.012934679, 0.093215205, 0.008, 64.876, 0.628)
 current = true
 script = ExtResource("1_8adiu")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.11493715, -0.16395377, 0.97974914, 0, 0.98628557, 0.16504759, -0.9933726, 0.018970102, -0.11336086, 0, 6.89, 0)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_6kuhc")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment"]
-transform = Transform3D(-0.9993919, 0.014859379, 0.03157799, 7.910258e-08, -0.9048261, 0.425779, 0.034899496, 0.42551947, 0.90427536, 0, 6.89, 0)
-
 [node name="Water" type="MeshInstance3D" parent="."]
-mesh = SubResource("PlaneMesh_g538k")
+mesh = SubResource("PlaneMesh_laryo")
 skeleton = NodePath("")
 script = ExtResource("3_hgp32")
-Time = 58.896847
-_sumOfSinesMat = SubResource("ShaderMaterial_8adiu")
-_sumOfSinesTextureMat = SubResource("ShaderMaterial_kxn0a")
-size = Vector2(8000, 8000)
-subdivide = 512
-simulate = true
-baseAmplitude = 10.0
-baseFrequency = 0.02
-phase_modifier = 1.5
+Time = 6141.3687
+SumOfSinesMat = SubResource("ShaderMaterial_g538k")
+SumOfSinesTextureMat = SubResource("ShaderMaterial_ho8b5")
+Size = Vector2(8000, 8000)
+Subdivide = 1024
+WaveCount = 64
+BaseAmplitude = 10.08
+BaseFrequency = 0.011
+Gain = 1.135
+Lacunarity = 0.885
+BasePhase = 0.84
+PhaseModifier = 1.06
+ChopModifier = 0.23
 
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/Button" to="Water" method="RegenerateWaves"]
 [connection signal="toggled" from="CanvasLayer/VBoxContainer/CheckButton" to="Water" method="ToggleBuffers"]

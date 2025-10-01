@@ -27,9 +27,9 @@ float schlick_fresnel(float cos_theta, float av) {
 }
 
 group_uniforms colors;
-uniform vec4 water_scatter_color : source_color = vec4(0.4,1.15,0.85,1.0); // Subsurface scattering produces a 'greener' color.
-uniform vec4 air_bubble_color : source_color = vec4(0.1,0.18,0.27,1.0); // Subsurface scattering produces a 'greener' color.
-group_uniforms;
+uniform vec4 water_scatter_color : source_color = vec4(0.0,1.052,0.212,1.0); // Subsurface scattering produces a 'greener' color.
+uniform vec4 air_bubble_color : source_color = vec4(0.157,0.063,0.827,1.0); // Subsurface scattering produces a 'greener' color.
+group_uniforms; 
 
 group_uniforms subsurface_scattering_parameters;
 uniform float height_scale : hint_range(0.0, 50.0, 0.01) = 2.5;

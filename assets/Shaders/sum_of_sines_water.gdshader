@@ -9,33 +9,39 @@ global uniform vec3 camera_coords;
 group_uniforms;
 
 buffer restrict in {
-	Wave wave_array[42];
+	Wave wave_array[64];
 }(bindname = waveBuffer, format = std430);
-
-group_uniforms toggles;
-uniform bool use_derivative_displacement = true;
-uniform bool useVertexShift = true;
+ 
+group_uniforms toggles; 
+uniform bool use_derivative_displacement = false;
+uniform bool useVertexShift = true; 
 group_uniforms;
 
 uniform float cutoff_dist : hint_range(0.0, 8000.0, 10.0) = 1000.0;
 uniform float cutoff_strength : hint_range(0.0, 0.005, 0.0001) = 0.0007;
+uniform float chopMod = 1.0;
 
+vec2 chopFunc(vec2 direction, float magnitude) {
+	return direction * magnitude * chopMod;
+}
 
-void vertex() {
+void vertex() { // when the algorithm is N^2
 	if (useVertexShift) {
 		VERTEX.xz += xzShift(VERTEX, camera_coords, NODE_POSITION_WORLD);
-	}
+	} 
 
 	float dist_factor = clamp(exp(-(length(VERTEX.xz - CAMERA_POSITION_WORLD.xz) - cutoff_dist)*cutoff_strength), 0.05, 1.0);
 	float displacement = 0.0;
-	vec2 prev_derivs = vec2(0.0);
+	//vec2 prev_derivs = vec2(0.0);
 	vec2 uv = VERTEX.xz;
 	for (int i = 0; i < wave_array.length(); i++) {
 		Wave w = wave_array[i];
 		float x = 0.0;
-		displacement += w.amplitude*expsine(uv,w, x);
-		prev_derivs = w.amplitude * d_expsine(uv, w, x);
-		uv += -prev_derivs * w.direction * w.amplitude * 1.7;
+		float magnitude =  w.amplitude*expsine(uv,w, x);
+		displacement += magnitude;
+		//prev_derivs = w.amplitude * d_expsine(uv, w, x);
+		//uv += -prev_derivs * w.direction * w.amplitude * 1.7;
+		uv += chopFunc(w.direction, magnitude);
 	}
 
 	if (use_derivative_displacement) {
@@ -47,8 +53,9 @@ void vertex() {
 
 varying float wave_height;
 group_uniforms colors;
-uniform vec4 water_color : source_color = vec4(0.1, 0.18, 0.35, 1.0);
+uniform vec4 water_color : source_color = vec4(0.0, 0.086, 0.204, 1.0);
 group_uniforms;
+
 void fragment() {
 	float dist = length(VERTEX.xz);
 	vec2 derivatives = vec2(0.0);
@@ -56,13 +63,15 @@ void fragment() {
 	vec2 prev_derivs = vec2(0.0);
 	vec2 uv = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xz;
 	for (int i = 0; i < wave_array.length(); i++) {
-		Wave w = wave_array[i];
+		Wave w = wave_array[i]; 
 		float x = 0.0;
-		displacement += w.amplitude*expsine(uv,w, x);
+		float magnitude = w.amplitude*expsine(uv,w, x);
+		displacement += magnitude;
 		prev_derivs = w.amplitude * d_expsine(uv, w, x);
-		uv += -prev_derivs * w.direction * w.amplitude * 1.7;
+		//uv += -prev_derivs * w.direction * w.amplitude * 1.7;
+		uv += chopFunc(w.direction, magnitude);
 
-		derivatives += prev_derivs;
+		derivatives += prev_derivs; 
 	}
 
 	wave_height = displacement;

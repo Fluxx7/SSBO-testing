@@ -8,8 +8,7 @@ uniform bool useCameraCoords;
 uniform vec4 upperPlane;
 uniform vec4 lowerPlane = vec4(0.0);
 group_uniforms;
-
-global uniform vec3 view_forward;
+ 
 global uniform vec3 camera_coords;
 
 void projectGrid(inout vec3 vertex, vec3 camera_pos) {
@@ -56,7 +55,7 @@ void vertex() {
 		localVert.xz = uv;
 	}
 	localVert.y += displacement * dist_factor;// / ampTotal;
-	VERTEX = localVert;
+	VERTEX = localVert; 
 
 }
 

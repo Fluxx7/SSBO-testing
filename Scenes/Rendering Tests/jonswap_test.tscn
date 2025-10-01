@@ -1,0 +1,111 @@
+[gd_scene load_steps=15 format=3 uid="uid://8qxx4qgirqgb"]
+
+[ext_resource type="Script" uid="uid://cky6u0t1f7a7w" path="res://assets/Scripts/Utility/FPSLabel.cs" id="1_fa8pb"]
+[ext_resource type="Script" uid="uid://clmjdrdn5dphs" path="res://assets/Scripts/Water/JonswapWater.cs" id="2_2leci"]
+[ext_resource type="Shader" uid="uid://ydttxe06jcko" path="res://assets/Shaders/jonswap_water.gdshader" id="2_5h3li"]
+[ext_resource type="Script" uid="uid://b14j8uj81cqh4" path="res://assets/Scripts/Utility/ControllableCamera.cs" id="2_ybqns"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_g538k"]
+sky_top_color = Color(6.545782e-06, 0.52119046, 0.8231743, 1)
+sky_horizon_color = Color(0.9999997, 0.9987791, 0.8728872, 1)
+sky_curve = 0.016322862
+sun_angle_max = 26.25
+sun_curve = 0.08615249
+
+[sub_resource type="Sky" id="Sky_kxn0a"]
+sky_material = SubResource("ProceduralSkyMaterial_g538k")
+process_mode = 1
+
+[sub_resource type="Environment" id="Environment_6kuhc"]
+background_mode = 2
+sky = SubResource("Sky_kxn0a")
+sky_rotation = Vector3(0.05235988, 0, 0)
+ambient_light_source = 3
+ambient_light_color = Color(0.431282, 0.611583, 1, 1)
+tonemap_mode = 4
+fog_enabled = true
+fog_light_color = Color(0.9187855, 0.95721394, 0.8535805, 1)
+fog_light_energy = 0.54
+fog_density = 0.0003
+fog_sky_affect = 0.1
+fog_depth_curve = 2.46228
+fog_depth_begin = 0.0
+fog_depth_end = 335.5
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_ybqns"]
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_fa8pb"]
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_fd5as"]
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_ke3j8"]
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_xwp8j"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5jj25"]
+render_priority = 0
+shader = ExtResource("2_5h3li")
+shader_parameter/water_scatter_color = Color(0, 0.72156864, 0.16470589, 1)
+shader_parameter/air_bubble_color = Color(0.050980393, 0.105882354, 0.16470589, 1)
+shader_parameter/height_scale = 21.1
+shader_parameter/k2 = 13.52
+shader_parameter/k3 = 5.42
+shader_parameter/k4 = 4.75
+shader_parameter/air_bubble_density = 3.4
+shader_parameter/displacementMap = SubResource("Texture2DRD_ybqns")
+shader_parameter/gradientMap = SubResource("Texture2DRD_fd5as")
+shader_parameter/gaussian = SubResource("Texture2DRD_fa8pb")
+shader_parameter/spectrumTexture = SubResource("Texture2DRD_xwp8j")
+shader_parameter/normalMap = SubResource("Texture2DRD_ke3j8")
+shader_parameter/cutoff_dist = 1000.0
+shader_parameter/cutoff_strength = 0.0007
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_uqjjx"]
+material = SubResource("ShaderMaterial_5jj25")
+size = Vector2(200, 200)
+subdivide_width = 512
+subdivide_depth = 512
+
+[node name="Node3D" type="Node3D"]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+follow_viewport_enabled = true
+
+[node name="Label" type="Label" parent="CanvasLayer"]
+anchors_preset = -1
+offset_left = 397.0
+offset_top = 2.0
+offset_right = 763.0
+offset_bottom = 31.0
+script = ExtResource("1_fa8pb")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer"]
+anchors_preset = -1
+offset_right = 396.0
+offset_bottom = 239.0
+
+[node name="Button" type="Button" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+text = "Regenerate Waves
+"
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(-0.9238795, 0.091282815, -0.37163705, 0, 0.9711343, 0.23853347, 0.3826835, 0.22037618, -0.8972111, 0, 3, 0)
+current = true
+script = ExtResource("2_ybqns")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_6kuhc")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment"]
+transform = Transform3D(-0.9993919, 0.014859379, 0.03157799, 7.910258e-08, -0.9048261, 0.425779, 0.034899496, 0.42551947, 0.90427536, 0, 6.89, 0)
+
+[node name="Water" type="MeshInstance3D" parent="." node_paths=PackedStringArray("Camera")]
+mesh = SubResource("PlaneMesh_uqjjx")
+skeleton = NodePath("")
+script = ExtResource("2_2leci")
+Subdivide = Vector2i(512, 512)
+Size = Vector2(200, 200)
+Camera = NodePath("../Camera3D")
+
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/Button" to="Water" method="RegenerateWaves"]
