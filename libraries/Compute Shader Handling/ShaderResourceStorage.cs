@@ -47,9 +47,17 @@ public partial class ShaderResourceStorage : RefCounted {
 	public static void SetBuffer(StringName buffer_name, byte[] data = null) {
 		buffers[buffer_name].SetData(data);
 	}
+	
+	public static void SetBufferSize(StringName buffer_name, uint size) {
+		buffers[buffer_name].SetSize(size);
+	}
 
 	public static byte[] GetBufferData(StringName buffer_name, RenderingDevice rd) {
 		return buffers[buffer_name].GetData(rd);
+	}
+	
+	public static void GetBufferDataAsync(StringName buffer_name, RenderingDevice rd, Callable callback) {
+		buffers[buffer_name].GetDataAsync(rd, callback);
 	}
 
 

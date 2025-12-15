@@ -52,6 +52,15 @@ public partial class BufferResource(BufferResource.BufferType format, byte[] dat
 		update[rd] = true;
 	}
 
+	public void SetSize(uint size) {
+		data = null;
+		foreach (var (rd, _) in rebuild) {
+			rebuild[rd] = true;
+		}
+
+		sizeBytes = size;
+	}
+
 	public byte[] GetData(RenderingDevice rd) {
 		return rd.BufferGetData(rids[rd]);
 	}

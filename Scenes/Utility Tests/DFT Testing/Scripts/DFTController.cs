@@ -14,10 +14,6 @@ public partial class DFTController : Node2D {
 	[Export] private TextureRect timeTexRect;
 	[ExportGroup("")]
 	
-	[ExportToolButton("Clear Shaders")]
-	private Callable ClearShaders => Callable.From(() => {
-		_dftHandler.Refresh();
-	});
 	[ExportToolButton("Run 1D DFT")]
 	private Callable callable1DDFT => Callable.From(RunDFT1D);
 	[ExportToolButton("Run 1D IDFT")]

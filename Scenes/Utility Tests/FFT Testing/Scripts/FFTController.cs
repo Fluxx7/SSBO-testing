@@ -14,10 +14,6 @@ public partial class FFTController : Node2D {
 	[Export] private TextureRect timeTexRect;
 	[ExportGroup("")]
 	
-	[ExportToolButton("Clear Shaders")]
-	private Callable ClearShaders => Callable.From(() => {
-		_fftHandler.Refresh();
-	});
 	[ExportToolButton("Run 1D FFT")]
 	private Callable callable1DDFT => Callable.From(RunFFT1D);
 	[ExportToolButton("Run 1D IFFT")]

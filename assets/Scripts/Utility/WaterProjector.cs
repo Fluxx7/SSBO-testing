@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using Godot;
+using GraphicsTesting.Libraries.ComputeShaderHandling;
 
 namespace GraphicsTesting.assets.Scripts.Utility;
 
@@ -131,7 +132,7 @@ public partial class WaterProjector : MeshInstance3D {
 	[ExportToolButton("Simulate")]
 	private Callable Simulate => Callable.From(() => (_simulate = !_simulate));
 
-	private ComputeHandler _compHandler = new();
+	private ComputeShader bufferGen = new("res://assets/Shaders/Compute/GLSL/sinwavegen.glsl");
 	private float _currentSeed;
 	private Vector3 _previousCameraLocation;
 	private Basis _previousCameraBasis;
@@ -270,7 +271,6 @@ public partial class WaterProjector : MeshInstance3D {
 	}
 	
 	public override void _ExitTree() {
-		_compHandler?.Close();
 		base._ExitTree();
 	}
 
@@ -290,29 +290,15 @@ public partial class WaterProjector : MeshInstance3D {
 	}
 
 	private void GenerateWaveBuffer() {
-		if (_compHandler.HasShader("buffer_gen") == false) {
-			_compHandler.AddShader("buffer_gen",
-				GD.Load<RDShaderFile>("res://assets/Shaders/Compute/GLSL/sinwavegen.glsl"));
-			_compHandler.CreateBuffer("paramBuffer", RenderingDevice.UniformType.UniformBuffer, 32);
-			var inputUniforms = new byte[32];
+		var inputUniforms = new byte[32];
 
-			float[] inputs = [10f, 0.02f, 1.5f, 0.82f, 1.18f];
-			Buffer.BlockCopy(inputs, 0, inputUniforms, 0, sizeof(float) * 5);
+		float[] inputs = [10f, 0.02f, 1.5f, 0.82f, 1.18f];
+		Buffer.BlockCopy(inputs, 0, inputUniforms, 0, sizeof(float) * 5);
+		bufferGen.CreateBuffer("paramBuffer", RenderingDevice.UniformType.UniformBuffer, 32u, 0, 0, inputUniforms);
+		bufferGen.CreateBuffer("waveBuffer", RenderingDevice.UniformType.StorageBuffer, 24 * WaveCount, 0, 1);
 
-			_compHandler.SetBuffer("paramBuffer", 20u, inputUniforms);
-			_compHandler.AssignUniform("buffer_gen", "paramBuffer", 0, 0);
-		}
-
-		if (_compHandler.HasUniform("waveBuffer") == false) {
-			RDUniform buffer = new RDUniform() {
-				UniformType = RenderingDevice.UniformType.StorageBuffer
-			};
-			buffer.AddId(_compHandler.CreateBuffer("waveBuffer", RenderingDevice.UniformType.StorageBuffer,
-				24 * WaveCount, "buffer_gen", 0, 1));
-		}
-
-		_compHandler.Dispatch("buffer_gen", WaveCount / 2, 1, 1, GeneratePushConstants());
-		_shader?.SetShaderBufferRaw("waveBuffer", _compHandler.GetBufferData("waveBuffer"));
+		bufferGen.Dispatch(WaveCount / 2, 1, 1, GeneratePushConstants());
+		_shader?.SetShaderBufferRaw("waveBuffer", bufferGen.GetBufferData("waveBuffer"));
 	}
 
 	private bool IsOnScreen() {

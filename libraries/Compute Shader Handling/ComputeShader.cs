@@ -137,6 +137,11 @@ public partial class ComputeShader(): RefCounted {
 		ShaderResourceStorage.SetBuffer(buffer, values);
 	}
 	
+	public static void SetBufferSize(StringName buffer, uint size) {
+		ShaderResourceStorage.SetBufferSize(buffer, size);
+	}
+
+	
 	public static void SetTexture(StringName tex_name, uint x_size, uint y_size, Image tex) {
 		
 	}
@@ -154,6 +159,7 @@ public partial class ComputeShader(): RefCounted {
 	}
 	
 	public static void GetBufferDataAsync(RenderingDevice rd, StringName buffer, Callable callback) {
+		ShaderResourceStorage.GetBufferDataAsync(buffer, rd, callback);
 	}
 	
 	#endregion

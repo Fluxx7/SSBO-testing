@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using Godot;
+using GraphicsTesting.Libraries.ComputeShaderHandling;
 
 namespace GraphicsTesting.assets.Scripts.Utility;
 
@@ -118,14 +119,9 @@ public partial class JonswapWater : MeshInstance3D {
 	private Callable Simulate => Callable.From(() => (_simulate = !_simulate));
 	[ExportToolButton("Update Waves")]
 	private Callable UpdateWaves => Callable.From(GenerateWaves);
-	[ExportToolButton("Clear Shaders")]
-	private Callable ClearShaders => Callable.From(() => {
-		_compHandler.Close();
-		_compHandler = new ComputeHandler(RenderingServer.GetRenderingDevice());
-		_shader.SetShaderParameter("mapWorldScale", new Vector4(1f/(_texSize * _tileMult), -0.2f, 1f, 1f));
-	});
 
-	private ComputeHandler _compHandler = new();
+	private ComputeShader jonswapGen = new("res://assets/Shaders/Compute/GLSL/JONSWAP/jonswap_gen.glsl");
+	private ComputeShader mapGen = new("res://assets/Shaders/Compute/GLSL/JONSWAP/tessendorf_idft_2d.glsl");
 	private float _currentSeed;
 	private Vector3 _previousCameraLocation;
 	private Basis _previousCameraBasis;
@@ -134,8 +130,29 @@ public partial class JonswapWater : MeshInstance3D {
 	private uint _texSize = 128;
 	[Export] private float _tileMult = 4f;
 
+	private void InitShaders() {
+		byte[] jonswapParams = new byte[32];
+		Buffer.BlockCopy(new []{18f, 20f, 1f, 0f, 10000f, 3.3f, 10000f, _texSize * _tileMult}, 0, jonswapParams, 0, 32);
+		jonswapGen.CreateBuffer("jonswapParams", RenderingDevice.UniformType.UniformBuffer, 32u, 0, 0, jonswapParams);
+		jonswapGen.CreateTexture("gaussian_noise", _texSize, _texSize, 0, 1);
+		jonswapGen.CreateTexture("spectrumTexture", _texSize, _texSize, 1, 0);
+
+		mapGen.AssignUniform("spectrumTexture", 0, 0);
+		mapGen.CreateTexture("displacementMap", _texSize, _texSize, 1, 0);
+		mapGen.CreateTexture("gradientMap", _texSize, _texSize, 1, 1);
+		mapGen.CreateTexture("normalMap", _texSize, _texSize, 1, 2);
+		
+		mapGen.BindTextureParameter("displacementMap", 
+			Callable.From(
+				(Texture2Drd texUniform) => 
+					_shader.SetShaderParameter("displacementMap", texUniform)));
+		mapGen.BindTextureParameter("gradientMap", 
+			Callable.From(
+				(Texture2Drd texUniform) => 
+					_shader.SetShaderParameter("gradientMap", texUniform)));
+	}
+	
 	public override void _Ready() {
-		_compHandler = new ComputeHandler(RenderingServer.GetRenderingDevice());
 		_shader = new ShaderMaterial();
 		_shader.SetShader(GD.Load<Shader>("res://assets/Shaders/jonswap_water.gdshader"));
 		GenerateJonswap();
@@ -177,7 +194,6 @@ public partial class JonswapWater : MeshInstance3D {
 	}
 	
 	public override void _ExitTree() {
-		_compHandler?.Close();
 		base._ExitTree();
 	}
 
@@ -187,47 +203,14 @@ public partial class JonswapWater : MeshInstance3D {
 	}
 
 	private void GenerateWaves() {
-		if (!_compHandler.HasShader("jonswap_gen") || !_compHandler.HasUniform("spectrumTexture")) {
-			GenerateJonswap();
-		}
-		if (!_compHandler.HasShader("make_maps")) {
-			_compHandler.AddShader("make_maps", GD.Load<RDShaderFile>("res://assets/Shaders/Compute/GLSL/JONSWAP/tessendorf_idft_2d.glsl"));
-			_compHandler.AssignUniform("make_maps", "spectrumTexture", 0, 0);
-			Texture2Drd displacementTexture = new Texture2Drd();
-			Texture2Drd gradientTexture = new Texture2Drd();
-			displacementTexture.TextureRdRid = _compHandler.CreateTexture("displacementMap", _texSize, _texSize);
-			_compHandler.AssignUniform("make_maps", "displacementMap", 1, 0);
-			gradientTexture.TextureRdRid = _compHandler.CreateTexture("gradientMap", _texSize, _texSize);
-			_compHandler.AssignUniform("make_maps", "gradientMap", 1, 1);
-			Texture2Drd normalTexture = new Texture2Drd();
-			normalTexture.TextureRdRid = _compHandler.CreateTexture("normalMap", _texSize, _texSize);
-			_compHandler.AssignUniform("make_maps", "normalMap", 1, 2);
-			_shader.SetShaderParameter("displacementMap", displacementTexture);
-			_shader.SetShaderParameter("gradientMap", gradientTexture);
-		}
-		
 		byte[] push_constants = new byte[16];
 		Buffer.BlockCopy(new []{_texSize}, 0, push_constants, 0, sizeof(int));
 		Buffer.BlockCopy(new []{_time, _texSize * _tileMult, 10000f}, 0, push_constants, sizeof(int), sizeof(float) * 3);
 
-		_compHandler.Dispatch("make_maps", _texSize / 16,  _texSize / 16, 1, push_constants);
+		mapGen.Dispatch(_texSize / 16,  _texSize / 16, 1, push_constants);
 	}
 
 	private void GenerateJonswap() {
-		if (!_compHandler.HasShader("jonswap_gen")) {
-			_compHandler.AddShader("jonswap_gen", GD.Load<RDShaderFile>("res://assets/Shaders/Compute/GLSL/JONSWAP/jonswap_gen.glsl"));
-			byte[] jonswapParams = new byte[32];
-			Buffer.BlockCopy(new []{18f, 20f, 1f, 0f, 10000f, 3.3f, 10000f, _texSize * _tileMult}, 0, jonswapParams, 0, 32);
-			_compHandler.CreateBuffer("jonswapParams", RenderingDevice.UniformType.UniformBuffer, 32u, "jonswap_gen", 0, 0, jonswapParams);
-			
-			Texture2Drd gaussianTexture = new Texture2Drd();
-			Texture2Drd spectrumTexture = new Texture2Drd();
-			gaussianTexture.TextureRdRid = _compHandler.CreateTexture("gaussian_noise", _texSize, _texSize);
-			_compHandler.AssignUniform("jonswap_gen", "gaussian_noise", 0, 1);
-			spectrumTexture.TextureRdRid = _compHandler.CreateTexture("spectrumTexture", _texSize, _texSize);
-			_compHandler.AssignUniform("jonswap_gen", "spectrumTexture", 1, 0);
-		}
-
 		var rng = new RandomNumberGenerator();
 		Image gaussian = Image.CreateEmpty((int)_texSize, (int)_texSize, false, Image.Format.Rgbah);
 		for (int u = 0; u < _texSize; u++) {
@@ -240,12 +223,12 @@ public partial class JonswapWater : MeshInstance3D {
 			}
 		}
 
-		_compHandler.SetTexture("gaussian_noise", _texSize, _texSize, gaussian);
+		ComputeShader.SetTexture("gaussian_noise", _texSize, _texSize, gaussian);
 		
 		byte[] push_constants = new byte[16];
 		Buffer.BlockCopy(new []{_texSize}, 0, push_constants, 0, sizeof(int));
 		
-		_compHandler.Dispatch("jonswap_gen", _texSize / 16, _texSize / 16, 1, push_constants);
+		jonswapGen.Dispatch(_texSize / 16, _texSize / 16, 1, push_constants);
 		
 	}
 }
