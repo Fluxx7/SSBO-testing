@@ -9,7 +9,6 @@ layout(rgba16f, set = 0, binding = 0) restrict readonly uniform image2D baseSpec
 
 layout(rgba16f, set = 1, binding = 0) restrict writeonly uniform image2D heightTexture;
 layout(rgba16f, set = 1, binding = 1) restrict writeonly uniform image2D gradientTexture;
-layout(rgba16f, set = 1, binding = 2) restrict writeonly uniform image2D normalTexture;
 
 layout(push_constant) restrict readonly uniform PushConstants {
     int texSize;
@@ -18,64 +17,68 @@ layout(push_constant) restrict readonly uniform PushConstants {
     float depth; // meters
 };
 
-#define j vec2(0.0,1.0)
+//#define j vec2(0.0,1.0)
 #define time_cycle 1024.0
-// (a.x + j*a.y) * (b.x + j*b.y) = a.x * b.x + b.x * j * a.y + b.y * j * a.x - b.y * a.y = a.x * b.x - b.y * a.y + j * (a.y * b.x + a.x * b.y)
+
+// (ax + j*ay) * (bx + j*by) 
+// = ax*bx - ay*by + j(ay*bx + ax*by)
 vec2 complex_mult(vec2 a, vec2 b) {
     return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+vec2 complex_mult(float a, vec2 b) {
+    return vec2(a * b.x, a * b.y );
 }
 
 vec2 exp_j(float theta) {
     return vec2(cos(theta), sin(theta));
 }
 
-vec2 h_tilde(ivec2 k) {
-    vec2 Fuv = imageLoad(baseSpectrum, k + texSize/2).rg;
-    vec2 Fuv_star = imageLoad(baseSpectrum, k + texSize/2).ba;
-   
-    float w = sqrt(length(k) * 9.81);
-    float w_naught = 2.0 * PI / time_cycle;
-    float dispersion_relation = floor(w/w_naught) * w_naught;
-
-    vec2 Fuv_out = complex_mult(Fuv, exp_j(dispersion_relation * time));
-    vec2 Fuv_star_out = complex_mult(Fuv_star, exp_j(-dispersion_relation * time));
-
-    return Fuv_out + Fuv_star_out;
-}
-
 void main() {
     if (gl_GlobalInvocationID.x >= texSize) return;
     if (gl_GlobalInvocationID.y >= texSize) return;
-    ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
-    int N = texSize;
-    float M = float(texSize);
+    ivec2 id = ivec2(gl_GlobalInvocationID.xy);
+    float sum = 0.0;
+    vec2 displacement = vec2(0.0);
+    const vec2 j = vec2(0.0, 1.0);
+    float deriv_x = 0.0;
+    float deriv_z = 0.0;
+    vec2 xterm = vec2(id) * tile_length / float(texSize);
+    float tex_sq = float(texSize * texSize);
 
-    float L = tile_length;
-    float dx = L / M;
-    float dk = 2.0 * PI / L;
+    int halfsize = texSize/2;
+    for (int n = -halfsize; n < halfsize; n++) {
+        for (int m = -halfsize; m < halfsize; m++) {
+            vec2 f_kterm = vec2(n, m) * 2.0 * PI / tile_length;
+            ivec2 kterm = ivec2(n,m);
+            float k_mag = length(f_kterm);
+            float k_mag_rcp = 1.0;
+            if (k_mag > 1e-6) {
+                k_mag_rcp = 1.0/k_mag;
+            }
 
-    vec2 xy = vec2(uv) * dx;
-
-    float real_sum = 0.0;
-    vec2 derivatives = vec2(0.0);
-
-    for (int n = -N/2; n < N/2; n++) {
-        for (int m = -N/2; m < N/2; m++) {
-            vec2 f_kterm = vec2(n, m) * dk;
-            ivec2 kterm = ivec2(f_kterm);
+            vec2 h_tilde = imageLoad(baseSpectrum, kterm + halfsize).xy;
+            vec2 ih = h_tilde.yx * vec2(-1.0, 1.0);
             
-            // h(k, t) * e^(jk•x)
-            vec2 freq_sample = complex_mult(h_tilde(kterm), exp_j(dot(f_kterm,xy)));
-
-            real_sum += freq_sample.x;
-            derivatives += complex_mult(j * f_kterm, freq_sample);
+            
+            vec2 exp_term = exp_j(dot(f_kterm, xterm));
+            vec2 summand = complex_mult( h_tilde, exp_term);
+            sum += summand.x;
+            vec2 deriv_term_x = complex_mult(f_kterm.x, ih);
+            vec2 deriv_term_z = complex_mult(f_kterm.y, ih);
+            vec2 dhdx = complex_mult(deriv_term_x, exp_term);
+            vec2 dhdz = complex_mult(deriv_term_z, exp_term);
+            deriv_x += dhdx.x;
+            deriv_z += dhdz.x;
+            displacement += -vec2(dhdx.x, dhdz.x) * k_mag_rcp;
         }
     }
-    float n_sq = M * M;
-    float displacement = real_sum / n_sq;
-    derivatives /= n_sq;
-   
-    imageStore(heightTexture, uv, vec4(0.0, real_sum, 0.0, 1.0));
-    imageStore(gradientTexture, uv, vec4(derivatives.x, derivatives.y, 0.0, 1.0));
-    imageStore(normalTexture, uv, vec4(normalize(vec3(-derivatives.x, 1.0, -derivatives.y)), 1.0));
+    // displacement /= texSize;
+    deriv_x /= texSize;
+    deriv_z /= texSize;
+    sum /= texSize;
+
+    imageStore(heightTexture, id, vec4(0.0, sum, 0.0, 1.0));
+    //imageStore(heightTexture, id, vec4(displacement.x, sum, displacement.y, 1.0));
+    imageStore(gradientTexture, id, vec4(deriv_x, deriv_z, 0.0, 1.0));
 }

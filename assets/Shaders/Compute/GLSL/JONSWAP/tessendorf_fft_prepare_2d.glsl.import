@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://dfx5gtkhg11hb"
+path="res://.godot/imported/tessendorf_fft_prepare_2d.glsl-2a6705d88e842c3f96fe68fac77c427e.res"
+
+[deps]
+
+source_file="res://assets/Shaders/Compute/GLSL/JONSWAP/tessendorf_fft_prepare_2d.glsl"
+dest_files=["res://.godot/imported/tessendorf_fft_prepare_2d.glsl-2a6705d88e842c3f96fe68fac77c427e.res"]
+
+[params]
+

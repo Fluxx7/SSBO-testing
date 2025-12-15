@@ -62,5 +62,5 @@ void main() {
     vec2 coeffs_conj = imageLoad(spectrumCoefficients, texSize - IDxy).rg;
     float output_coeff = sqrt(jonswap(IDxy)) / sqrt(2.0);
     float output_conj = sqrt(jonswap(texSize-IDxy)) / sqrt(2.0);
-    imageStore(baseSpectrum, IDxy, vec4(output_coeff * coeffs.x, output_coeff * coeffs.y, output_conj * coeffs_conj.x, -output_conj * coeffs_conj.y));
+    imageStore(baseSpectrum, IDxy, vec4(output_coeff * coeffs.x, output_coeff * coeffs.y, 0.0, 1.0));
 }

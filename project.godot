@@ -10,8 +10,8 @@ config_version=5
 
 [application]
 
-config/name="GraphicsTesting dev"
-run/main_scene="uid://8qxx4qgirqgb"
+config/name="GodotWaterRendering"
+run/main_scene="uid://c7j36bvqcqrso"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 

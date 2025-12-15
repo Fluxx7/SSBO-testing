@@ -41,11 +41,6 @@ public partial class ComputeHandler : GodotObject {
 				}
 			}
 		}
-		foreach (var pipeline in pipelines) {
-			if (rd.ComputePipelineIsValid(pipeline.Value)) {
-				rd.FreeRid(pipeline.Value);
-			}
-		}
 		foreach (var uniform in uniforms) {
 			rd.FreeRid(uniform.Value);
 		}
@@ -262,19 +257,11 @@ public partial class ComputeHandler : GodotObject {
 			Rid newbuf;
 
 			if (isUniform) {
-				if (values != null) {
-					newbuf = rd.UniformBufferCreate(trueSizeBytes, values);
-				} else {
-					newbuf = rd.UniformBufferCreate(trueSizeBytes);
-				}
+				newbuf = values != null ? rd.UniformBufferCreate(trueSizeBytes, values) : rd.UniformBufferCreate(trueSizeBytes);
 
 				uniformSizes[buffer] = (int)trueSizeBytes;
 			} else {
-				if (values != null) {
-					newbuf = rd.StorageBufferCreate(sizeBytes, values);
-				} else {
-					newbuf = rd.StorageBufferCreate(sizeBytes);
-				}
+				newbuf = values != null ? rd.StorageBufferCreate(sizeBytes, values) : rd.StorageBufferCreate(sizeBytes);
 
 				uniformSizes[buffer] = (int) sizeBytes;
 			}

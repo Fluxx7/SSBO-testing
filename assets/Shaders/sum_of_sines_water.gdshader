@@ -1,6 +1,5 @@
 shader_type spatial;
 render_mode world_vertex_coords, shadows_disabled;
-#include "vertex_shift.gdshaderinc"
 #include "sine_funcs.gdshaderinc"
 #include "water_algorithms.gdshaderinc"
 
@@ -9,45 +8,39 @@ global uniform vec3 camera_coords;
 group_uniforms;
 
 buffer restrict in {
-	Wave wave_array[64];
+	Wave wave_array[42];
 }(bindname = waveBuffer, format = std430);
  
 group_uniforms toggles; 
 uniform bool use_derivative_displacement = false;
-uniform bool useVertexShift = true; 
 group_uniforms;
 
 uniform float cutoff_dist : hint_range(0.0, 8000.0, 10.0) = 1000.0;
 uniform float cutoff_strength : hint_range(0.0, 0.005, 0.0001) = 0.0007;
 uniform float chopMod = 1.0;
 
-vec2 chopFunc(vec2 direction, float magnitude) {
-	return direction * magnitude * chopMod;
+vec2 chopFunc(vec2 derivatives, float frequency) {
+	float wave_vec = 2.0 * PI * frequency;
+	return -chopMod * derivatives / wave_vec;
 }
 
-void vertex() { // when the algorithm is N^2
-	if (useVertexShift) {
-		VERTEX.xz += xzShift(VERTEX, camera_coords, NODE_POSITION_WORLD);
-	} 
+void vertex() {
 
 	float dist_factor = clamp(exp(-(length(VERTEX.xz - CAMERA_POSITION_WORLD.xz) - cutoff_dist)*cutoff_strength), 0.05, 1.0);
 	float displacement = 0.0;
-	//vec2 prev_derivs = vec2(0.0);
 	vec2 uv = VERTEX.xz;
 	for (int i = 0; i < wave_array.length(); i++) {
 		Wave w = wave_array[i];
 		float x = 0.0;
 		float magnitude =  w.amplitude*expsine(uv,w, x);
 		displacement += magnitude;
-		//prev_derivs = w.amplitude * d_expsine(uv, w, x);
-		//uv += -prev_derivs * w.direction * w.amplitude * 1.7;
-		uv += chopFunc(w.direction, magnitude);
+		uv += chopFunc(w.amplitude * d_expsine(uv, w, x), w.frequency);
 	}
 
 	if (use_derivative_displacement) {
 		VERTEX.xz = uv;
 	}
-	VERTEX.y += displacement * dist_factor;// * distance_factor;
+	VERTEX.y += displacement * dist_factor;
 
 }
 
@@ -68,8 +61,7 @@ void fragment() {
 		float magnitude = w.amplitude*expsine(uv,w, x);
 		displacement += magnitude;
 		prev_derivs = w.amplitude * d_expsine(uv, w, x);
-		//uv += -prev_derivs * w.direction * w.amplitude * 1.7;
-		uv += chopFunc(w.direction, magnitude);
+		uv += chopFunc(prev_derivs, w.frequency);
 
 		derivatives += prev_derivs; 
 	}
@@ -78,7 +70,7 @@ void fragment() {
 	ALBEDO = water_color.rgb;
 
 	vec3 model_normal = vec3(-derivatives.x, 1.0, -derivatives.y);
-	model_normal *= mix(0.015, 1.0, exp(-dist * 0.0175));
+	model_normal.xz *= mix(0.001, 1.0, exp(-dist * 0.002));
 
 	NORMAL = normalize(VIEW_MATRIX * vec4(model_normal, 0.0)).xyz;
 
@@ -90,4 +82,5 @@ void fragment() {
 
 void light() {
 	brdf_lighting(LIGHT, LIGHT_COLOR, VIEW, VIEW_MATRIX, NORMAL, vec2(0.0), wave_height, SPECULAR_LIGHT, DIFFUSE_LIGHT);
+	
 }

@@ -37,12 +37,12 @@ public partial class ComputeController : Node2D
 	[Export] public TextureRect spectrumTexRect;
 	[Export] public TextureRect displaceTexRect;
 	[Export] public TextureRect gradientTexRect;
-	[Export] public TextureRect normalTexRect;
+	[Export] public TextureRect initialSpectrumTexRect;
 
 	private ComputeHandler _compHandler = new();
 	private float _currentSeed;
 	private float _time;
-	private uint _texSize = 128;
+	[Export] private uint _texSize = 64;
 	private const int _updateRate = 32;
 	private int _updateTimer = 0;
 
@@ -64,7 +64,9 @@ public partial class ComputeController : Node2D
 		if (_simulate) {
 			_time += (float)delta;
 			if (_updateTimer >= _updateRate) {
-				GenerateWaves();
+				if (_texSize <= 256) {
+					GenerateWaves();
+				}
 				_updateTimer = 0;
 			} else {
 				_updateTimer++;
@@ -90,11 +92,22 @@ public partial class ComputeController : Node2D
 			_compHandler.CreateBuffer("jonswapParams", RenderingDevice.UniformType.UniformBuffer, 32u, "jonswap_gen", 0, 0, jonswapParams);
 			
 			Texture2Drd gaussianTexture = new Texture2Drd();
-			Texture2Drd spectrumTexture = new Texture2Drd();
+			Texture2Drd baseSpectrumTexture = new Texture2Drd();
 			gaussianTexture.TextureRdRid = _compHandler.CreateTexture("gaussian_noise", _texSize, _texSize);
 			_compHandler.AssignUniform("jonswap_gen", "gaussian_noise", 0, 1);
+			baseSpectrumTexture.TextureRdRid = _compHandler.CreateTexture("baseSpectrumTexture", _texSize, _texSize);
+			_compHandler.AssignUniform("jonswap_gen", "baseSpectrumTexture", 1, 0);
+			if (initialSpectrumTexRect != null) {
+				initialSpectrumTexRect.Texture = baseSpectrumTexture;
+			}
+		}
+
+		if (!_compHandler.HasShader("update_spectrum")) {
+			_compHandler.AddShader("update_spectrum", GD.Load<RDShaderFile>("res://assets/Shaders/Compute/GLSL/JONSWAP/update_spectrum.glsl"));
+			_compHandler.AssignUniform("update_spectrum", "baseSpectrumTexture", 0, 0);
+			Texture2Drd spectrumTexture = new Texture2Drd();
 			spectrumTexture.TextureRdRid = _compHandler.CreateTexture("spectrumTexture", _texSize, _texSize);
-			_compHandler.AssignUniform("jonswap_gen", "spectrumTexture", 1, 0);
+			_compHandler.AssignUniform("update_spectrum", "spectrumTexture", 1,0);
 			if (spectrumTexRect != null) {
 				spectrumTexRect.Texture = spectrumTexture;
 			}
@@ -112,17 +125,11 @@ public partial class ComputeController : Node2D
 		_compHandler.AssignUniform("make_maps", "displacementMap", 1, 0);
 		gradientTexture.TextureRdRid = _compHandler.CreateTexture("gradientMap", _texSize, _texSize);
 		_compHandler.AssignUniform("make_maps", "gradientMap", 1, 1);
-		Texture2Drd normalTexture = new Texture2Drd();
-		normalTexture.TextureRdRid = _compHandler.CreateTexture("normalMap", _texSize, _texSize);
-		_compHandler.AssignUniform("make_maps", "normalMap", 1, 2);
 		if (displaceTexRect != null) {
 			displaceTexRect.Texture = displacementTexture;
 		}
 		if (gradientTexRect != null) {
 			gradientTexRect.Texture = gradientTexture;
-		}
-		if (normalTexRect != null) {
-			normalTexRect.Texture = normalTexture;
 		}
 	}
 
@@ -137,6 +144,7 @@ public partial class ComputeController : Node2D
 		Buffer.BlockCopy(new []{_texSize}, 0, push_constants, 0, sizeof(int));
 		Buffer.BlockCopy(new []{_time, _tileLength, _depth}, 0, push_constants, sizeof(int), sizeof(float) * 3);
 
+		_compHandler.Dispatch("update_spectrum", _texSize / 16,  _texSize / 16, 1, push_constants);
 		_compHandler.Dispatch("make_maps", _texSize / 16,  _texSize / 16, 1, push_constants);
 	}
 

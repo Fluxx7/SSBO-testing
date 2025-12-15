@@ -3,33 +3,33 @@
 [ext_resource type="Script" uid="uid://b5ltjxf4p2djx" path="res://assets/Scripts/2D/ComputeController.cs" id="1_85ope"]
 [ext_resource type="Script" uid="uid://bt51qx4gf17hx" path="res://assets/Scripts/2D/TimeLabel.cs" id="2_85ope"]
 
-[sub_resource type="Texture2DRD" id="Texture2DRD_85ope"]
+[sub_resource type="Texture2DRD" id="Texture2DRD_1h3e0"]
 
-[sub_resource type="Texture2DRD" id="Texture2DRD_pr0lp"]
+[sub_resource type="Texture2DRD" id="Texture2DRD_xal5h"]
 
-[sub_resource type="Texture2DRD" id="Texture2DRD_p4beb"]
+[sub_resource type="Texture2DRD" id="Texture2DRD_wpgpu"]
 
-[sub_resource type="Texture2DRD" id="Texture2DRD_56qtn"]
+[sub_resource type="Texture2DRD" id="Texture2DRD_skmxa"]
 
 [node name="Node2D" type="Node2D"]
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(576, 325)
 
-[node name="ComputeController" type="Node2D" parent="." node_paths=PackedStringArray("spectrumTexRect", "displaceTexRect", "gradientTexRect", "normalTexRect")]
+[node name="ComputeController" type="Node2D" parent="." node_paths=PackedStringArray("spectrumTexRect", "displaceTexRect", "gradientTexRect", "initialSpectrumTexRect")]
 script = ExtResource("1_85ope")
 _windSpeed10 = 18.0
 _windSpeed19 = 20.0
 _windDirection = Vector2(1, 0)
 _fetch = 10000.0
 _tileLength = 128.0
-spectrumTexRect = NodePath("../HBoxContainer/VBoxContainer/Spectrum")
+spectrumTexRect = NodePath("../HBoxContainer/VBoxContainer3/Spectrum")
 displaceTexRect = NodePath("../HBoxContainer/VBoxContainer2/Displacement")
 gradientTexRect = NodePath("../HBoxContainer/VBoxContainer4/Gradients")
-normalTexRect = NodePath("../HBoxContainer/VBoxContainer3/Normals")
+initialSpectrumTexRect = NodePath("../HBoxContainer/VBoxContainer/SpectrumZero")
+_texSize = 128
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
-anchors_preset = -1
 offset_left = 464.0
 offset_top = 400.0
 offset_right = 691.0
@@ -55,7 +55,7 @@ script = ExtResource("2_85ope")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_direction = 2
-anchors_preset = -1
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -72,15 +72,30 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="HBoxContainer/VBoxContainer"]
 layout_mode = 2
-text = "Spectrum Map"
+text = "Initial Spectrum Map"
 horizontal_alignment = 1
 
-[node name="Spectrum" type="TextureRect" parent="HBoxContainer/VBoxContainer"]
+[node name="SpectrumZero" type="TextureRect" parent="HBoxContainer/VBoxContainer"]
 texture_filter = 1
 texture_repeat = 1
 custom_minimum_size = Vector2(256, 0)
 layout_mode = 2
-texture = SubResource("Texture2DRD_85ope")
+texture = SubResource("Texture2DRD_1h3e0")
+expand_mode = 5
+
+[node name="VBoxContainer3" type="VBoxContainer" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer3"]
+layout_mode = 2
+text = "Spectrum Map"
+horizontal_alignment = 1
+
+[node name="Spectrum" type="TextureRect" parent="HBoxContainer/VBoxContainer3"]
+texture_filter = 1
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+texture = SubResource("Texture2DRD_xal5h")
 expand_mode = 5
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="HBoxContainer"]
@@ -96,7 +111,7 @@ texture_filter = 1
 texture_repeat = 1
 custom_minimum_size = Vector2(256, 0)
 layout_mode = 2
-texture = SubResource("Texture2DRD_pr0lp")
+texture = SubResource("Texture2DRD_wpgpu")
 expand_mode = 4
 stretch_mode = 5
 
@@ -112,22 +127,7 @@ horizontal_alignment = 1
 texture_filter = 1
 custom_minimum_size = Vector2(256, 0)
 layout_mode = 2
-texture = SubResource("Texture2DRD_p4beb")
-expand_mode = 5
-
-[node name="VBoxContainer3" type="VBoxContainer" parent="HBoxContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer3"]
-layout_mode = 2
-text = "Normal Map"
-horizontal_alignment = 1
-
-[node name="Normals" type="TextureRect" parent="HBoxContainer/VBoxContainer3"]
-texture_filter = 1
-custom_minimum_size = Vector2(256, 0)
-layout_mode = 2
-texture = SubResource("Texture2DRD_56qtn")
+texture = SubResource("Texture2DRD_skmxa")
 expand_mode = 5
 
 [connection signal="pressed" from="VBoxContainer/Spectrum Button" to="ComputeController" method="RegenerateWaves"]

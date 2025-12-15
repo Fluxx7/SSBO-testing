@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://cl88r1yyk34mv"
+path="res://.godot/imported/tma_spectrum_gen.glsl-04b8aaf05023f8c9829bd547cfcaf4e2.res"
+
+[deps]
+
+source_file="res://assets/Shaders/Compute/GLSL/JONSWAP/tma_spectrum_gen.glsl"
+dest_files=["res://.godot/imported/tma_spectrum_gen.glsl-04b8aaf05023f8c9829bd547cfcaf4e2.res"]
+
+[params]
+

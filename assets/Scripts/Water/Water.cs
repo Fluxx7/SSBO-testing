@@ -3,6 +3,7 @@ using Godot;
 using Godot.Collections;
 using Godot.NativeInterop;
 using GraphicsTesting.assets.Scripts.Utility;
+using GraphicsTesting.Libraries.ComputeShaderHandling;
 using Wave = Godot.Collections.Dictionary<Godot.StringName, float>;
 [Tool]
 public partial class Water : MeshInstance3D {
@@ -14,9 +15,8 @@ public partial class Water : MeshInstance3D {
 	private ShaderMaterial _material;
 	[ExportGroup("Materials")] [Export] public ShaderMaterial SumOfSinesMat = null;
 	[Export] public ShaderMaterial SumOfSinesTextureMat = null;
-	[ExportGroup("")] private PlaneMesh _plane = null;
-	[Export] public Vector2 Size;
-	[Export] public int Subdivide;
+	[ExportGroup("")]
+	[Export] private Mesh _plane;
 	
 	[Export] public bool UseBuffers = true;
 	[Export] public bool Render = true;
@@ -56,29 +56,20 @@ public partial class Water : MeshInstance3D {
 	}
 
 	[ExportGroup("")]
-	[ExportToolButton("Regenerate Mesh")]
-	public Callable Regenerate => Callable.From(RegenerateMesh);
 	[ExportToolButton("Regenerate Waves")]
 	public Callable RegenWaves => Callable.From(RegenerateWaves);
-	[ExportToolButton("Regenerate Shader")]
-	public Callable RegenShad => Callable.From(RegenerateShader);
 	private bool _simulate = true;
 	[ExportToolButton("Simulate")]
 	private Callable Simulate => Callable.From(() => (_simulate = !_simulate));
 
 	
 	// compute shader stuff
-	private ComputeHandler _compHandler;
+	private ComputeShader bufferGen = new("res://assets/Shaders/Compute/GLSL/sinwavegen.glsl");
+	private ComputeShader textureGen = new("res://assets/Shaders/Compute/GLSL/sinwave_texgen.glsl");
 
 	public void RegenerateWaves() {
-		_plane = null;
 		GenerateMesh();
 		GenerateSineWaves();
-	}
-	
-	public void RegenerateShader() {
-		_compHandler.AddShader("buffer_gen",GD.Load<RDShaderFile>("res://assets/Shaders/Compute/GLSL/sinwavegen.glsl"));
-		_compHandler.AddShader("texture_gen",GD.Load<RDShaderFile>("res://assets/Shaders/Compute/GLSL/sinwave_texgen.glsl"));
 	}
 
 	public void ToggleBuffers(bool value) {
@@ -88,8 +79,16 @@ public partial class Water : MeshInstance3D {
 	#region Overrides
 
 	public override void _Ready() {
-		_compHandler = new ComputeHandler(RenderingServer.GetRenderingDevice());
+		bufferGen.CreateBuffer("paramBuffer", RenderingDevice.UniformType.UniformBuffer, 32u, 0,0);
+		bufferGen.CreateBuffer("waveBuffer", RenderingDevice.UniformType.StorageBuffer, 24 * WaveCount, 0, 1);
 		
+		textureGen.AssignUniform("paramBuffer", 0,0);
+		textureGen.CreateTexture("waveTexture", WaveCount, 2, 0, 1);
+		
+		textureGen.BindTextureParameter("waveTexture", 
+			Callable.From(
+				(Texture2Drd texUniform) => 
+				RenderingServer.GlobalShaderParameterSet("waveTexture", texUniform)));
 		
 		_material = SumOfSinesMat;
 		GenerateSineWaves();
@@ -98,9 +97,6 @@ public partial class Water : MeshInstance3D {
 	}
 
 	public override void _Process(double delta) {
-		if (_compHandler == null) {
-			_compHandler = new ComputeHandler(RenderingServer.GetRenderingDevice());
-		}
 		if (Engine.IsEditorHint()) {
 			if (_plane != null && !Render) {
 				_plane = null;
@@ -111,8 +107,6 @@ public partial class Water : MeshInstance3D {
 			
 			if (_material == null) return;
 
-			_material.SetShaderParameter("size", Size);
-
 			if (!_simulate) {
 				return;
 			}
@@ -122,28 +116,16 @@ public partial class Water : MeshInstance3D {
 		_material.SetShaderParameter("time", Time);
 	}
 
-	public override void _ExitTree() {
-		_compHandler?.Close();
-		base._ExitTree();
-	}
-
 	#endregion
 
 	private void GenerateSineWaves() {
-		if (_compHandler == null) {
-			_compHandler = new ComputeHandler(RenderingServer.GetRenderingDevice());
-		}
-		if (!_compHandler.HasUniform("paramBuffer")) {
-			_compHandler.CreateBuffer("paramBuffer", RenderingDevice.UniformType.UniformBuffer, 32);
-		}
-		
 		if (_prevAmp != BaseAmplitude || _prevFreq != BaseFrequency || _prevPhaseMod != PhaseModifier || _prevPhase != BasePhase || _prevGain != Gain || _prevLac != Lacunarity) {
 			var inputUniforms = new byte[32];
 			
 			float[] inputs = [BaseAmplitude, BaseFrequency, BasePhase, PhaseModifier, Lacunarity, Gain];
 			Buffer.BlockCopy( inputs, 0, inputUniforms, 0, sizeof(float) * 6);
 		
-			_compHandler.SetBuffer("paramBuffer", 24u, inputUniforms);
+			ComputeShader.SetBuffer("paramBuffer", inputUniforms);
 			_prevAmp = BaseAmplitude;
 			_prevFreq = BaseFrequency;
 			_prevPhase = BasePhase;
@@ -153,9 +135,10 @@ public partial class Water : MeshInstance3D {
 		}
 		
 		if (UseBuffers) {
-			GenerateWaveBuffer(PushConstants());
+			bufferGen.Dispatch(WaveCount / 2, 1, 1, PushConstants());
+			_material.SetShaderBufferRaw("waveBuffer", bufferGen.GetBufferData("waveBuffer"));
 		} else {
-			GenerateWaveTexture(PushConstants());
+			textureGen.Dispatch(WaveCount / 2, 1, 1, PushConstants());
 		}
 	}
 
@@ -174,76 +157,20 @@ public partial class Water : MeshInstance3D {
 		return pushConstants;
 	}
 
-	private void GenerateWaveBuffer(byte[] pushConstants) {
-		if (!_compHandler.HasShader("buffer_gen")) {
-			_compHandler.AddShader("buffer_gen", GD.Load<RDShaderFile>("res://assets/Shaders/Compute/GLSL/sinwavegen.glsl"));
-			if (!_compHandler.HasUniform("paramBuffer")) {
-				_compHandler.CreateBuffer("paramBuffer", RenderingDevice.UniformType.UniformBuffer, 32);
-			}
-			_compHandler.AssignUniform("buffer_gen", "paramBuffer", 0, 0);
-		}
-		
-		if (!_compHandler.HasUniform("waveBuffer")) {
-			RDUniform buffer = new RDUniform() {
-				UniformType = RenderingDevice.UniformType.StorageBuffer
-			};
-			buffer.AddId(_compHandler.CreateBuffer("waveBuffer", RenderingDevice.UniformType.StorageBuffer, 24 * WaveCount, "buffer_gen", 0, 1));
-			
-		} else {
-			Rid newBuf = _compHandler.SetBuffer("waveBuffer", WaveCount * 24);
-			if (newBuf.IsValid) {
-				
-			}
-		}
-		
-		_compHandler.Dispatch("buffer_gen", WaveCount / 2, 1, 1, pushConstants);
-		_material.SetShaderBufferRaw("waveBuffer", _compHandler.GetBufferData("waveBuffer"));
-	}
-	
-	private void GenerateWaveTexture(byte[] pushConstants) {
-		if (!_compHandler.HasShader("texture_gen")) {
-			_compHandler.AddShader("texture_gen", GD.Load<RDShaderFile>("res://assets/Shaders/Compute/GLSL/sinwave_texgen.glsl"));
-			if (!_compHandler.HasUniform("paramBuffer")) {
-				_compHandler.CreateBuffer("paramBuffer", RenderingDevice.UniformType.UniformBuffer, 32);
-			}
-			_compHandler.AssignUniform("texture_gen", "paramBuffer", 0, 0);
-		}
-		
-		if (!_compHandler.HasUniform("waveTexture")) {
-			Texture2Drd texUniform = new Texture2Drd();
-			texUniform.TextureRdRid = _compHandler.CreateTexture("waveTexture", WaveCount, 2);
-			RenderingServer.GlobalShaderParameterSet("waveTexture", texUniform);
-			_compHandler.AssignUniform("texture_gen", "waveTexture", 0, 1);
-		}
-		
-		_compHandler.Dispatch("texture_gen", WaveCount / 2, 1, 1, pushConstants);
-	}
-
-
 	#region Helpers
 
-	public void RegenerateMesh() {
-		_plane = null;
-		GenerateMesh();
-	}
-
 	private void GenerateMesh() {
-		if (_plane != null) return;
 		if (UseBuffers) {
 			_material = SumOfSinesMat;
-			GenerateWaveBuffer(PushConstants(false));
+			bufferGen.Dispatch(WaveCount / 2, 1, 1, PushConstants(false));
+			_material.SetShaderBufferRaw("waveBuffer", bufferGen.GetBufferData("waveBuffer"));
 		} else {
 			_material = SumOfSinesTextureMat;
 			_material.SetShaderParameter("waveCount", WaveCount);
-			GenerateWaveTexture(PushConstants(false));
+			textureGen.Dispatch(WaveCount / 2, 1, 1, PushConstants(false));
 		}
-		_plane = new() {
-			Size = Size,
-			SubdivideWidth = Subdivide,
-			SubdivideDepth = Subdivide
-		};
 		Mesh = _plane;
-		Mesh.SurfaceSetMaterial(0, _material);
+		Mesh?.SurfaceSetMaterial(0, _material);
 	}
 
 	#endregion

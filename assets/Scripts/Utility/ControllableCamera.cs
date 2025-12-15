@@ -43,6 +43,8 @@ public partial class ControllableCamera : Camera3D {
 				case MouseButton.WheelDown:
 					_velocity = float.Clamp(_velocity / SpeedScale, MinSpeed, MaxSpeed);
 					break;
+				default:
+					break;
 			}
 		}
 	}

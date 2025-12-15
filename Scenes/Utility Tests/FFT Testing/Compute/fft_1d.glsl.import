@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://3qovklppquf1"
+path="res://.godot/imported/fft_1d.glsl-8e402c09470cdfb3ad3b11ad0f9c7007.res"
+
+[deps]
+
+source_file="res://Scenes/Utility Tests/FFT Testing/Compute/fft_1d.glsl"
+dest_files=["res://.godot/imported/fft_1d.glsl-8e402c09470cdfb3ad3b11ad0f9c7007.res"]
+
+[params]
+

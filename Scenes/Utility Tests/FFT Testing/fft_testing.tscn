@@ -1,0 +1,57 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8jg45mdbgfs5"]
+
+[ext_resource type="Script" uid="uid://uf3ygtuoam8e" path="res://Scenes/Utility Tests/FFT Testing/Scripts/FFTController.cs" id="1_ewh7o"]
+
+[node name="DftTesting" type="Node2D"]
+
+[node name="DFTController" type="Node2D" parent="." node_paths=PackedStringArray("sampleTexRect", "freqTexRect", "timeTexRect")]
+script = ExtResource("1_ewh7o")
+sampleTexRect = NodePath("../Waveform Container/Sample/SampleWaveform")
+freqTexRect = NodePath("../Waveform Container/Frequency Domain/FrequencyWaveform")
+timeTexRect = NodePath("../Waveform Container/Time Domain/TimeWaveform")
+
+[node name="Waveform Container" type="VBoxContainer" parent="."]
+offset_left = 69.0
+offset_top = 100.0
+offset_right = 1102.0
+offset_bottom = 549.0
+alignment = 1
+
+[node name="Sample" type="VBoxContainer" parent="Waveform Container"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Waveform Container/Sample"]
+layout_mode = 2
+text = "Input Waveform"
+
+[node name="SampleWaveform" type="TextureRect" parent="Waveform Container/Sample"]
+custom_minimum_size = Vector2(0, 128)
+layout_mode = 2
+expand_mode = 5
+stretch_mode = 4
+
+[node name="Frequency Domain" type="VBoxContainer" parent="Waveform Container"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Waveform Container/Frequency Domain"]
+layout_mode = 2
+text = "Frequency Representation"
+
+[node name="FrequencyWaveform" type="TextureRect" parent="Waveform Container/Frequency Domain"]
+custom_minimum_size = Vector2(0, 128)
+layout_mode = 2
+expand_mode = 5
+stretch_mode = 4
+
+[node name="Time Domain" type="VBoxContainer" parent="Waveform Container"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Waveform Container/Time Domain"]
+layout_mode = 2
+text = "Output Waveform"
+
+[node name="TimeWaveform" type="TextureRect" parent="Waveform Container/Time Domain"]
+custom_minimum_size = Vector2(0, 128)
+layout_mode = 2
+expand_mode = 5
+stretch_mode = 4
