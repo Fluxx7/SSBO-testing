@@ -40,6 +40,10 @@ public partial class ShaderResourceStorage : RefCounted {
 		return true;
 	}
 
+	public static void SetTexture(StringName texture_name, uint x_size, uint y_size, Image data) {
+		textures[texture_name].SetTexture(x_size, y_size, data);
+	}
+
 	public static void BindTextureParameter(StringName texture, Callable callback) {
 		textures[texture].BindTextureParameter(callback);
 	}

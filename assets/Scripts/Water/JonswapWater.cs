@@ -155,6 +155,7 @@ public partial class JonswapWater : MeshInstance3D {
 	public override void _Ready() {
 		_shader = new ShaderMaterial();
 		_shader.SetShader(GD.Load<Shader>("res://assets/Shaders/jonswap_water.gdshader"));
+		InitShaders();
 		GenerateJonswap();
 		GenerateWaves();
 		_shader.SetShaderParameter("water_scatter_color", ScatterColor);

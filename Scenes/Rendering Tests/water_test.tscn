@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://cky6u0t1f7a7w" path="res://assets/Scripts/Utility/FPSLabel.cs" id="1_g538k"]
 [ext_resource type="Script" uid="uid://d1qw1be7adl7v" path="res://assets/Scripts/Water/Water.cs" id="3_hgp32"]
 [ext_resource type="Shader" uid="uid://cf6cwynfn2fdn" path="res://assets/Shaders/sum_of_sines_water.gdshader" id="3_kxn0a"]
-[ext_resource type="ArrayMesh" uid="uid://6b6vvcf2dcpk" path="res://assets/water_mesh.res" id="3_ql5bd"]
+[ext_resource type="ArrayMesh" uid="uid://dnpsd768884xg" path="res://assets/water_mesh.res" id="3_ql5bd"]
 [ext_resource type="Shader" uid="uid://bxwegidev13eg" path="res://assets/Shaders/sum_of_sines_water_tex.gdshader" id="4_kxn0a"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_g538k"]
@@ -39,8 +39,8 @@ fog_depth_end = 335.5
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_g538k"]
 render_priority = 0
 shader = ExtResource("3_kxn0a")
-shader_parameter/time = 756.13153
-shader_parameter/water_scatter_color = Color(1.732707e-06, 0.7293463, 0.43378082, 1)
+shader_parameter/time = 822.6539
+shader_parameter/water_scatter_color = Color(4.4520945e-07, 0.32814932, 0.18448636, 1)
 shader_parameter/air_bubble_color = Color(0, 0.08136409, 0.20619032, 1)
 shader_parameter/water_color = Color(0.0130490735, 0.059672564, 0.10764105, 1)
 shader_parameter/height_scale = 11.92999973334064
@@ -51,7 +51,7 @@ shader_parameter/air_bubble_density = 3.4
 shader_parameter/use_derivative_displacement = false
 shader_parameter/cutoff_dist = 1850.0
 shader_parameter/cutoff_strength = 0.0007
-shader_parameter/chopMod = 6.7
+shader_parameter/chopMod = 1.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ho8b5"]
 render_priority = 0
@@ -121,7 +121,7 @@ transform = Transform3D(300, 0, 0, 0, 1, 0, 0, 0, 300, 55.057, 0, -12.904)
 mesh = ExtResource("3_ql5bd")
 skeleton = NodePath("")
 script = ExtResource("3_hgp32")
-Time = 756.13153
+Time = 822.6539
 SumOfSinesMat = SubResource("ShaderMaterial_g538k")
 SumOfSinesTextureMat = SubResource("ShaderMaterial_ho8b5")
 _plane = ExtResource("3_ql5bd")
@@ -131,7 +131,6 @@ Gain = 1.16
 Lacunarity = 0.87
 BasePhase = 0.84
 PhaseModifier = 1.07
-ChopModifier = 6.7
 
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/Button" to="Water" method="RegenerateWaves"]
 [connection signal="toggled" from="CanvasLayer/VBoxContainer/CheckButton" to="Water" method="ToggleBuffers"]

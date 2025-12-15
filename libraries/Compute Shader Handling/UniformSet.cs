@@ -32,7 +32,8 @@ public partial class UniformSet : RefCounted {
 		
 		// for each uniform name in the set, add an RDUniform to the array
 		foreach (var (binding, rname) in uniforms) {
-			set_uniforms.Add(ShaderResourceStorage.GetRDUniform(rd, rname, binding, out rebuildSet));
+			set_uniforms.Add(ShaderResourceStorage.GetRDUniform(rd, rname, binding, out bool rebuilt));
+			rebuildSet |= rebuilt;
 		}
 		
 		// TODO: determine what else would need the set to be rebuilt

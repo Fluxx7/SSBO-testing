@@ -74,7 +74,7 @@ public partial class BufferResource(BufferResource.BufferType format, byte[] dat
 		needs_rebuild = false;
 		if (!rebuild.TryGetValue(rd, out bool value)) {
             value = true;
-            rebuild[rd] = value;
+            rebuild[rd] = true;
 		}
 		if (value) {
 			needs_rebuild = true;
@@ -94,9 +94,16 @@ public partial class BufferResource(BufferResource.BufferType format, byte[] dat
 				UniformType = bufferType
 			};
 			rduniforms[rd].AddId(rids[rd]);
-		} else if (update[rd]) {
-			rd.BufferUpdate(rids[rd], 0u, sizeBytes, data);
-			update[rd] = false;
+		} else  {
+			if (!update.TryGetValue(rd, out bool uval)) {
+				update[rd] = false;
+				uval = false;
+			}
+
+			if (uval) {
+				rd.BufferUpdate(rids[rd], 0u, sizeBytes, data);
+			}
+			
 		}
 		RDUniform output = rduniforms[rd];
 		output.Binding = (int) binding;

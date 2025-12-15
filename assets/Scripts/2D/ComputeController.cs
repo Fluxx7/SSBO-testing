@@ -35,8 +35,8 @@ public partial class ComputeController : Node2D
 	[Export] public TextureRect initialSpectrumTexRect;
 
 	private ComputeShader jonswapGen = new("res://assets/Shaders/Compute/GLSL/JONSWAP/jonswap_gen.glsl");
-	private ComputeShader mapGen = new("res://assets/Shaders/Compute/GLSL/JONSWAP/tessendorf_idft_2d.glsl");
 	private ComputeShader updateSpectrum = new("res://assets/Shaders/Compute/GLSL/JONSWAP/update_spectrum.glsl");
+	private ComputeShader mapGen = new("res://assets/Shaders/Compute/GLSL/JONSWAP/tessendorf_idft_2d.glsl");
 	private float _currentSeed;
 	private float _time;
 	[Export] private uint _texSize = 64;
@@ -48,7 +48,7 @@ public partial class ComputeController : Node2D
 	}
 
 	public override void _Ready() {
-		InitCompHandler();
+		InitShaders();
 		GenerateJonswap();
 		GenerateWaves();
 	}
@@ -76,7 +76,7 @@ public partial class ComputeController : Node2D
 		GenerateWaves();
 	}
 
-	private void InitCompHandler() {
+	private void InitShaders() {
 		byte[] jonswapParams = new byte[32];
 		Buffer.BlockCopy(new []{_windSpeed10, _windSpeed19, _windDirection.X, _windDirection.Y, _fetch, _peakEnhancement, _depth, _tileLength}, 0, jonswapParams, 0, 32);
 		jonswapGen.CreateBuffer("jonswapParams", RenderingDevice.UniformType.UniformBuffer, 32u, 0, 0, jonswapParams);

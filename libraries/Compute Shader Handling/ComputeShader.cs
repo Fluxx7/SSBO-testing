@@ -143,7 +143,7 @@ public partial class ComputeShader(): RefCounted {
 
 	
 	public static void SetTexture(StringName tex_name, uint x_size, uint y_size, Image tex) {
-		
+		ShaderResourceStorage.SetTexture(tex_name, x_size, y_size, tex);
 	}
 	
 	public static void CreateBuffer(StringName buffer, RenderingDevice.UniformType type, uint size_bytes, byte[] data = null) {

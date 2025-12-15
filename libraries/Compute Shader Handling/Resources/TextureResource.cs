@@ -5,13 +5,21 @@ namespace GraphicsTesting.Libraries.ComputeShaderHandling;
 
 public partial class TextureResource(uint x_size, uint y_size) : ShaderResource {
 	private uint xSize = x_size, ySize = y_size;
+	private Image data;
 	private List<Callable> callbacks = [];
+	private Dictionary<RenderingDevice, bool> update = new();
 
 	public TextureResource() : this(16, 16) {
 		
 	}
 	
-	public void SetTexture(byte[] new_data) {
+	public void SetTexture(uint x_size, uint y_size, Image tex) {
+		data = tex;
+		xSize = x_size;
+		ySize = y_size;
+		foreach (var (rd, _) in update) {
+			update[rd] = true;
+		}
 	}
 
 	public void BindTextureParameter(Callable callback) {
@@ -20,25 +28,37 @@ public partial class TextureResource(uint x_size, uint y_size) : ShaderResource 
 
 	public override RDUniform GetRDUniform(RenderingDevice rd, uint binding, out bool needs_rebuild) {
 		needs_rebuild = false;
-		if (rebuild[rd]) { 
+		if (!rebuild.TryGetValue(rd, out bool value)) {
+			value = true;
+			rebuild[rd] = true;
+		}
+		if (value) {
 			needs_rebuild = true;
-			// 	if (rids[rd].IsValid) {
-			// 		rd.FreeRid(rids[rd]);
-			// 	}
-			//
-			// 	if (format == BufferType.Uniform) {
-			// 		rids[rd] = rd.UniformBufferCreate(sizeBytes, data);
-			// 	} else {
-			// 		rids[rd] = rd.StorageBufferCreate(sizeBytes, data);
-			// 		bufferType = RenderingDevice.UniformType.StorageBuffer;
-			// 	}
-			//
-			// 	rebuild[rd] = false;
-			//
-			// 	rduniforms[rd] = new RDUniform {
-			// 		UniformType = bufferType
-			// 	};
-			// 	rduniforms[rd].AddId(rids[rd]);
+			if (rids.TryGetValue(rd, out Rid rid)) {
+				rd.FreeRid(rid);
+			}
+			var tex_format = new RDTextureFormat() {
+				Width = xSize,
+				Height = ySize,
+				Format = RenderingDevice.DataFormat.R16G16B16A16Sfloat,
+				TextureType = RenderingDevice.TextureType.Type2D,
+				UsageBits = RenderingDevice.TextureUsageBits.CanCopyFromBit | 
+							RenderingDevice.TextureUsageBits.StorageBit | 
+							RenderingDevice.TextureUsageBits.CanUpdateBit |
+							RenderingDevice.TextureUsageBits.SamplingBit
+			};
+			if (data != null) {
+				rids[rd] = rd.TextureCreate(tex_format, new RDTextureView(), [data.GetData()]);
+			} else {
+				rids[rd] = rd.TextureCreate(tex_format, new RDTextureView());
+			}
+			
+			rebuild[rd] = false;
+			update[rd] = false;
+			rduniforms[rd] = new RDUniform {
+				UniformType = RenderingDevice.UniformType.Image
+			};
+			rduniforms[rd].AddId(rids[rd]);
 			if (rd == RenderingServer.GetRenderingDevice()) {
 				foreach (Callable callback in callbacks) {
 					Texture2Drd texUniform = new Texture2Drd {
@@ -47,7 +67,17 @@ public partial class TextureResource(uint x_size, uint y_size) : ShaderResource 
 					callback.Call(texUniform);
 				}
 			}
-		}
+		} else  {
+			if (!update.TryGetValue(rd, out bool uval)) {
+				update[rd] = false;
+				uval = false;
+			}
+
+			if (uval) {
+				rd.TextureUpdate(rids[rd], 0, data.GetData());
+			}
+			
+		} 
 		RDUniform output = rduniforms[rd];
 		output.Binding = (int) binding;
 		return output;
