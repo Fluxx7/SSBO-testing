@@ -60,10 +60,10 @@ public partial class TextureResource(uint x_size, uint y_size) : ShaderResource 
 			};
 			rduniforms[rd].AddId(rids[rd]);
 			if (rd == RenderingServer.GetRenderingDevice()) {
+				Texture2Drd texUniform = new Texture2Drd {
+					TextureRdRid = rids[rd]
+				};
 				foreach (Callable callback in callbacks) {
-					Texture2Drd texUniform = new Texture2Drd {
-						TextureRdRid = rids[rd]
-					};
 					callback.Call(texUniform);
 				}
 			}

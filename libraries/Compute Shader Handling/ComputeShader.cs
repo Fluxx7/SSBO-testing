@@ -8,12 +8,12 @@ public partial class ComputeShader(): RefCounted {
 	private RenderingDevice prevRd;
 	private RDShaderSpirV shaderSpirV;
 	private ulong spirvTime;
-	private Godot.Collections.Dictionary<RenderingDevice, Rid> shaderComps = new();
-	private Godot.Collections.Dictionary<RenderingDevice, ulong> shaderCompTimes = new();
-	private Godot.Collections.Dictionary<RenderingDevice, Rid> pipelines = new();
+	private Dictionary<RenderingDevice, Rid> shaderComps = new();
+	private Dictionary<RenderingDevice, ulong> shaderCompTimes = new();
+	private Dictionary<RenderingDevice, Rid> pipelines = new();
 	private StringName shaderPath;
 	
-	private Godot.Collections.Dictionary<uint, UniformSet> uniformSets = new();
+	private Dictionary<uint, UniformSet> uniformSets = new();
 	
 	public ComputeShader(StringName shader_path) : this() {
 		shaderPath = shader_path;
@@ -25,12 +25,22 @@ public partial class ComputeShader(): RefCounted {
 	}
 
 	~ComputeShader() {
+		Close();
+	}
+
+	public void Close() {
+		foreach (var set in uniformSets) {
+			set.Value.Close();
+		}
+		uniformSets.Clear();
 		foreach (var (rd, pipeline) in pipelines) {
 			if (rd.ComputePipelineIsValid(pipeline)) {
 				rd.FreeRid(pipeline);
 			}
 			rd.FreeRid(shaderComps[rd]);
 		}
+		pipelines.Clear();
+		shaderComps.Clear();
 	}
 
 	public void SetPath(StringName shader_path) {
@@ -56,7 +66,7 @@ public partial class ComputeShader(): RefCounted {
 		if (build) {
 			shaderCompTimes[rd] = modifiedTime;
 			if (shaderComps.TryGetValue(rd, out Rid shaderComp)) {
-				rd.FreeRid(shaderComps[rd]);
+				rd.FreeRid(shaderComp);
 				if (rd.ComputePipelineIsValid(pipelines[rd])) {
 					rd.FreeRid(pipelines[rd]);
 				}

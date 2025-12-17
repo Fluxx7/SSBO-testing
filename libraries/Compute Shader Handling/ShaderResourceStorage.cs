@@ -80,5 +80,21 @@ public partial class ShaderResourceStorage : RefCounted {
 				return new RDUniform();
 		}
 	}
+
+	public static void Close(StringName rname) {
+		switch (resources[rname]) {
+			case ResourceType.Buffer:
+				buffers[rname].Close();
+				break;
+			case ResourceType.Texture:
+				textures[rname].Close();
+				break;
+			case ResourceType.Uniform:
+				uniforms[rname].Close();
+				break;
+			default:
+				break;
+		}
+	}
 #endregion
 }

@@ -116,6 +116,12 @@ public partial class Water : MeshInstance3D {
 		_material.SetShaderParameter("time", Time);
 	}
 
+	public override void _ExitTree() {
+		bufferGen.Close();
+		textureGen.Close();
+		base._ExitTree();
+	}
+
 	#endregion
 
 	private void GenerateSineWaves() {

@@ -195,6 +195,8 @@ public partial class JonswapWater : MeshInstance3D {
 	}
 	
 	public override void _ExitTree() {
+		jonswapGen.Close();
+		mapGen.Close();
 		base._ExitTree();
 	}
 

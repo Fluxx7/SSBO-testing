@@ -66,6 +66,7 @@ void main() {
     float dirX = sin(multiplier)*direction_distribution.x + direction_determinant.x;
     float dirY = cos(multiplier)*direction_distribution.y + direction_determinant.y;
     w.direction = vec2(dirX, dirY);
+
     w.amplitude = baseAmplitude * pow(lacunarity, gl_GlobalInvocationID.x);
     w.frequency = baseFrequency * pow(gain, gl_GlobalInvocationID.x);
     w.phase = basePhase * pow(phaseModifier, gl_GlobalInvocationID.x);

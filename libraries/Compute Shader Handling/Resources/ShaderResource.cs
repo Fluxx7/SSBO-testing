@@ -1,5 +1,5 @@
+using System.Collections.Generic;
 using Godot;
-using Godot.Collections;
 
 namespace GraphicsTesting.Libraries.ComputeShaderHandling;
 
@@ -13,7 +13,12 @@ public abstract partial class ShaderResource : RefCounted {
 			rd.FreeRid(rid);
 		}
 	}
-	
+
+	public void Close() {
+		foreach (var (rd, rid) in rids) {
+			rd.FreeRid(rid);
+		}
+	}
 	
 	public abstract RDUniform GetRDUniform(RenderingDevice rd, uint binding, out bool needs_rebuild);
 

@@ -68,6 +68,9 @@ public partial class ComputeController : Node2D
 	}
 	
 	public override void _ExitTree() {
+		jonswapGen.Close();
+		mapGen.Close();
+		updateSpectrum.Close();
 		base._ExitTree();
 	}
 

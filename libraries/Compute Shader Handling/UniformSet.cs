@@ -1,16 +1,29 @@
 using Godot;
 using Godot.Collections;
 
+
 namespace GraphicsTesting.Libraries.ComputeShaderHandling;
 
 public partial class UniformSet : RefCounted {
-	private Dictionary<RenderingDevice, Rid> rids = new();
-	private Dictionary<RenderingDevice, bool> rebuild = new();
-	private Dictionary<uint, StringName> uniforms = new();
+	private System.Collections.Generic.Dictionary<RenderingDevice, Rid> rids = new();
+	private System.Collections.Generic.Dictionary<RenderingDevice, bool> rebuild = new();
+	private System.Collections.Generic.Dictionary<uint, StringName> uniforms = new();
 
 	~UniformSet() {
+		Close();
+	}
+
+	public void Close() {
 		foreach (var (rd, rid) in rids) {
-			rd.FreeRid(rid);
+			if (rd.UniformSetIsValid(rid)) {
+				rd.FreeRid(rid);
+			}
+		}
+		rids.Clear();
+		rebuild.Clear();
+		uniforms.Clear();
+		foreach (var (_, uniform) in uniforms) {
+			ShaderResourceStorage.Close(uniform);
 		}
 	}
 
@@ -27,7 +40,7 @@ public partial class UniformSet : RefCounted {
 			rebuild[rd] = true;
 		}
 
-		bool rebuildSet = rebuild[rd];
+		bool rebuildSet = rebuild[rd] || !rd.UniformSetIsValid(rids[rd]);
 		Array<RDUniform> set_uniforms = new Array<RDUniform>();
 		
 		// for each uniform name in the set, add an RDUniform to the array
