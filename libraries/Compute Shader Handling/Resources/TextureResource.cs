@@ -22,6 +22,12 @@ public partial class TextureResource(uint x_size, uint y_size) : ShaderResource 
 		}
 	}
 
+	public override void Close() {
+		base.Close();
+		callbacks.Clear();
+		update.Clear();
+	}
+
 	public void BindTextureParameter(Callable callback) {
 		callbacks.Add(callback);
 	}
@@ -75,6 +81,7 @@ public partial class TextureResource(uint x_size, uint y_size) : ShaderResource 
 
 			if (uval) {
 				rd.TextureUpdate(rids[rd], 0, data.GetData());
+				update[rd] = false;
 			}
 			
 		} 

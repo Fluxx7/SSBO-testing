@@ -19,12 +19,12 @@ public partial class UniformSet : RefCounted {
 				rd.FreeRid(rid);
 			}
 		}
-		rids.Clear();
-		rebuild.Clear();
-		uniforms.Clear();
 		foreach (var (_, uniform) in uniforms) {
 			ShaderResourceStorage.Close(uniform);
 		}
+		rids.Clear();
+		rebuild.Clear();
+		uniforms.Clear();
 	}
 
 	public void BindUniform(StringName uniform, uint binding) {

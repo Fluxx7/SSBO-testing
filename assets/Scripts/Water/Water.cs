@@ -56,11 +56,11 @@ public partial class Water : MeshInstance3D {
 	}
 
 	[ExportGroup("")]
-	[ExportToolButton("Regenerate Waves")]
-	public Callable RegenWaves => Callable.From(RegenerateWaves);
-	private bool _simulate = true;
-	[ExportToolButton("Simulate")]
-	private Callable Simulate => Callable.From(() => (_simulate = !_simulate));
+	// [ExportToolButton("Regenerate Waves")]
+	// public Callable RegenWaves => Callable.From(RegenerateWaves);
+	// private bool _simulate = true;
+	// [ExportToolButton("Simulate")]
+	// private Callable Simulate => Callable.From(() => (_simulate = !_simulate));
 
 	
 	// compute shader stuff
@@ -107,10 +107,11 @@ public partial class Water : MeshInstance3D {
 			
 			if (_material == null) return;
 
-			if (!_simulate) {
-				return;
-			}
+			// if (!_simulate) {
+			// 	return;
+			// }
 		}
+
 
 		Time += (float)delta;
 		_material.SetShaderParameter("time", Time);
@@ -142,7 +143,7 @@ public partial class Water : MeshInstance3D {
 		
 		if (UseBuffers) {
 			bufferGen.Dispatch(WaveCount / 2, 1, 1, PushConstants());
-			_material.SetShaderBufferRaw("waveBuffer", bufferGen.GetBufferData("waveBuffer"));
+			//_material.SetShaderBufferRaw("waveBuffer", bufferGen.GetBufferData("waveBuffer"));
 		} else {
 			textureGen.Dispatch(WaveCount / 2, 1, 1, PushConstants());
 		}
@@ -169,7 +170,7 @@ public partial class Water : MeshInstance3D {
 		if (UseBuffers) {
 			_material = SumOfSinesMat;
 			bufferGen.Dispatch(WaveCount / 2, 1, 1, PushConstants(false));
-			_material.SetShaderBufferRaw("waveBuffer", bufferGen.GetBufferData("waveBuffer"));
+			//_material.SetShaderBufferRaw("waveBuffer", bufferGen.GetBufferData("waveBuffer"));
 		} else {
 			_material = SumOfSinesTextureMat;
 			_material.SetShaderParameter("waveCount", WaveCount);

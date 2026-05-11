@@ -75,7 +75,9 @@ void fragment() {
 	NORMAL = normalize(VIEW_MATRIX * vec4(model_normal, 0.0)).xyz;
 
 
-	ROUGHNESS = 0.02;
+	ROUGHNESS = 0.125;
+	METALLIC = 0.0;
+	SPECULAR = 0.5;
 }
 
 

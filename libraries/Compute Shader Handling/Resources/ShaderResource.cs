@@ -14,10 +14,13 @@ public abstract partial class ShaderResource : RefCounted {
 		}
 	}
 
-	public void Close() {
+	public virtual void Close() {
 		foreach (var (rd, rid) in rids) {
 			rd.FreeRid(rid);
 		}
+		rids.Clear();
+		rebuild.Clear();
+		rduniforms.Clear();
 	}
 	
 	public abstract RDUniform GetRDUniform(RenderingDevice rd, uint binding, out bool needs_rebuild);
