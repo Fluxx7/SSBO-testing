@@ -10,25 +10,11 @@ layout(set = 0, binding = 0, std430) buffer restrict readonly twiddleFactors {
 };
 
 layout(set = 1, binding = 0, std430) buffer restrict fft_buffers {
-    vec2 fft_data[][2];
+    vec4 fft_data[][2];
 };
 #define fft_index(x, y, b) fft_data[ x + y * N][ b ] 
 #define fft_vindex(v, b) fft_data[ v.x + v.y * N][ b ] 
 
-
-layout(set = 1, binding = 1, std430) buffer restrict fft_gradient_buffers {
-    vec4 fft_grad_data[][2];
-};
-
-#define fft_grad_index(x, y, b) fft_grad_data[ x + y * N][ b ] 
-#define fft_grad_vindex(v, b) fft_grad_data[ v.x + v.y * N][ b ] 
-
-layout(set = 1, binding = 2, std430) buffer restrict fft_displacement_buffers {
-    vec4 fft_disp_data[][2];
-};
-
-#define fft_disp_index(x, y, b) fft_disp_data[ x + y * N][ b ] 
-#define fft_disp_vindex(v, b) fft_disp_data[ v.x + v.y * N][ b ] 
 
 
 layout(push_constant) restrict readonly uniform PushConstants {
@@ -81,50 +67,24 @@ void main() {
 
     vec2 twiddled_x = vec2(0);
     vec2 twiddled_y = vec2(0);
-    vec2 twiddled_z = vec2(0);
     vec2 even_x = vec2(0);
     vec2 even_y = vec2(0);
-    vec2 even_z = vec2(0);
 
 
     // load and twiddle the "odd" value, and load the "even" value
-    twiddled_y = complex_mult(twiddle, source(source_index_2));
-    even_y = source(source_index_1);
-
-    // calculate the output values and write them to the determined indices
-#ifdef USE_NORMALIZATION
-    dest(dest_index_2) = complex_mult(even_y - twiddled_y, 0.5);
-    dest(dest_index_1) = complex_mult(even_y + twiddled_y, 0.5);
-#else
-    dest(dest_index_2) = even_y - twiddled_y;
-    dest(dest_index_1) = even_y + twiddled_y;
-#endif
-    twiddled_x = complex_mult(twiddle, fft_disp_index(source_index_2, y_coord, curr_source).xy);
-    even_x = fft_disp_index(source_index_1, y_coord, curr_source).xy;
-    twiddled_z = complex_mult(twiddle, fft_disp_index(source_index_2, y_coord, curr_source).zw);
-    even_z = fft_disp_index(source_index_1, y_coord, curr_source).zw;
-
-    // calculate the output values and write them to the determined indices
-#ifdef USE_NORMALIZATION
-    fft_disp_index(dest_index_2, y_coord, curr_dest) = vec4(even_x - twiddled_x, even_z - twiddled_z) * 0.5;
-    fft_disp_index(dest_index_1, y_coord, curr_dest) = vec4(even_x + twiddled_x, even_z + twiddled_z) * 0.5;
-#else
-    fft_disp_index(dest_index_2, y_coord, curr_dest) = vec4(even_x - twiddled_x, even_z - twiddled_z);
-    fft_disp_index(dest_index_1, y_coord, curr_dest) = vec4(even_x + twiddled_x, even_z + twiddled_z);
-#endif
+    twiddled_x = complex_mult(twiddle, source(source_index_2).xy);
+    even_x = source(source_index_1).xy;
+    twiddled_y = complex_mult(twiddle, source(source_index_2).zw);
+    even_y = source(source_index_1).zw;
     
-    twiddled_x = complex_mult(twiddle, fft_grad_index(source_index_2, y_coord, curr_source).xy);
-    even_x = fft_grad_index(source_index_1, y_coord, curr_source).xy;
-    twiddled_z = complex_mult(twiddle, fft_grad_index(source_index_2, y_coord, curr_source).zw);
-    even_z = fft_grad_index(source_index_1, y_coord, curr_source).zw;
 
     // calculate the output values and write them to the determined indices
 #ifdef USE_NORMALIZATION
-    fft_grad_index(dest_index_2, y_coord, curr_dest) = vec4(even_x - twiddled_x, even_z - twiddled_z) * 0.5;
-    fft_grad_index(dest_index_1, y_coord, curr_dest) = vec4(even_x + twiddled_x, even_z + twiddled_z) * 0.5;
+    dest(dest_index_2) = vec4(complex_mult(even_x - twiddled_x, 0.5), complex_mult(even_y - twiddled_y, 0.5));
+    dest(dest_index_1) = vec4(complex_mult(even_x + twiddled_x, 0.5), complex_mult(even_y + twiddled_y, 0.5));
 #else
-    fft_grad_index(dest_index_2, y_coord, curr_dest) = vec4(even_x - twiddled_x, even_z - twiddled_z);
-    fft_grad_index(dest_index_1, y_coord, curr_dest) = vec4(even_x + twiddled_x, even_z + twiddled_z);
+    dest(dest_index_2) = vec4(even_x - twiddled_x, even_y - twiddled_y);
+    dest(dest_index_1) = vec4(even_x + twiddled_x, even_y + twiddled_y);
 #endif
        
     

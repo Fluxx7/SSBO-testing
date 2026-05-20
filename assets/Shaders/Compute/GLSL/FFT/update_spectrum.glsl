@@ -18,7 +18,7 @@ to make this easier, the macro fft_index handles everything automatically.
 the arguments are the x coordinate, the y coordinate, and then which of the two arrays to access 
 */
 layout(set = 1, binding = 0, std430) buffer restrict writeonly fft_buffers {
-    vec2 fft_data[][2];
+    vec4 fft_data[][2];
 };
 #define fft_index(x, y, b) fft_data[ x + y * texSize][ b ] 
 #define fft_vindex(v, b) fft_data[ v.x + v.y * texSize][ b ] 
@@ -83,7 +83,7 @@ void main() {
     vec2 exp_dispersion = exp_j(dispersion);
     vec2 H_tilde = complex_mult(Hnaught, exp_dispersion) + complex_mult(Hnaught_star, exp_dispersion * vec2(1.0, -1.0));
 
-    fft_vindex(id, 0) = H_tilde;
+    fft_vindex(id, 0) = vec4(H_tilde, 0.0, 0.0);
     imageStore(spectrumTexture, id, vec4(H_tilde, 0.0, 1.0));
     
     vec2 ikx = complex_mult(f_kterm.x, j); 

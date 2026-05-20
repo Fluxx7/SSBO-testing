@@ -158,6 +158,38 @@ public partial class ComputeShader(): RefCounted {
 	public void GetBufferDataAsync(StringName buffer, Callable callback) {
 		GetBufferDataAsync(prevRd, buffer, callback);
 	}
+	
+	public uint CreateInternalBuffer(RenderingDevice.UniformType type, uint size_bytes, uint set, uint binding, byte[] data = null) {
+		uint id = CreateInternalBuffer(type, size_bytes, data);
+		AssignUniform(id, set, binding);
+		return id;
+	}
+
+	public uint CreateInternalTexture(uint x_size, uint y_size, uint set, uint binding) {
+		uint id = CreateInternalTexture(x_size, y_size);
+		AssignUniform(id, set, binding);
+		return id;
+	}
+
+	public void AssignUniform(uint id, uint set, uint binding) {
+		if (!uniformSets.TryGetValue(set, out UniformSet value)) {
+			value = new UniformSet();
+			uniformSets[set] = value;
+		}
+
+		value.BindUniform(id, binding);
+	}
+	
+	
+	
+	
+	public byte[] GetInternalBufferData(uint id) {
+		return GetInternalBufferData(prevRd, id);
+	}
+	
+	public void GetInternalBufferDataAsync(uint id, Callable callback) {
+		GetInternalBufferDataAsync(prevRd, id, callback);
+	}
 
 	#endregion
 	
@@ -206,6 +238,47 @@ public partial class ComputeShader(): RefCounted {
 	
 	public static void BindTextureParameter(StringName texture, Callable callback) {
 		ShaderResourceStorage.BindTextureParameter(texture, callback);
+	}
+	
+	public static void SetInternalBuffer(uint id, byte[] values = null) {
+		ShaderResourceStorage.SetInternalBuffer(id, values);
+	}
+	
+	public static void SetInternalBufferSize(uint id, uint size) {
+		ShaderResourceStorage.SetInternalBufferSize(id, size);
+	}
+
+	
+	public static void SetInternalTexture(uint id, uint x_size, uint y_size, Image tex) {
+		ShaderResourceStorage.SetInternalTexture(id, x_size, y_size, tex);
+	}
+	
+	public static void SetInternalTextureSize(uint id, uint x_size, uint y_size) {
+		ShaderResourceStorage.SetInternalTextureSize(id, x_size, y_size);
+	}
+	
+	public static uint CreateInternalBuffer(RenderingDevice.UniformType type, uint size_bytes, byte[] data = null) {
+		return ShaderResourceStorage.CreateInternalBuffer(type, size_bytes, data);
+	}
+
+	public static uint CreateInternalTexture(uint x_size, uint y_size) {
+		return ShaderResourceStorage.CreateInternalTexture(x_size, y_size);
+	}
+	
+	public static uint CreateInternalTexture(uint x_size, uint y_size, TextureResource.TextureType texture_type) {
+		return ShaderResourceStorage.CreateInternalTexture(x_size, y_size, texture_type);
+	}
+	
+	public static byte[] GetInternalBufferData(RenderingDevice rd, uint id) {
+		return ShaderResourceStorage.GetInternalBufferData(id, rd);
+	}
+	
+	public static void GetInternalBufferDataAsync(RenderingDevice rd, uint id, Callable callback) {
+		ShaderResourceStorage.GetInternalBufferDataAsync(id, rd, callback);
+	}
+	
+	public static void BindInternalTextureParameter(uint id, Callable callback) {
+		ShaderResourceStorage.BindInternalTextureParameter(id, callback);
 	}
 	
 	#endregion
