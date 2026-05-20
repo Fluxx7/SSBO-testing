@@ -39,9 +39,22 @@ public partial class ShaderResourceStorage : RefCounted {
 		textures[texture_name] = new TextureResource(x_size, y_size);
 		return true;
 	}
+	
+	public static bool CreateTexture(StringName texture_name, uint x_size, uint y_size, TextureResource.TextureType texType) {
+		if (!CollectionExtensions.TryAdd(resources, texture_name, ResourceType.Texture)) {
+			return false;
+		}
+
+		textures[texture_name] = new TextureResource(x_size, y_size, texType);
+		return true;
+	}
 
 	public static void SetTexture(StringName texture_name, uint x_size, uint y_size, Image data) {
 		textures[texture_name].SetTexture(x_size, y_size, data);
+	}
+	
+	public static void SetTextureSize(StringName texture_name, uint x_size, uint y_size) {
+		textures[texture_name].SetSize(x_size, y_size);
 	}
 
 	public static void BindTextureParameter(StringName texture, Callable callback) {

@@ -6,7 +6,6 @@ layout(local_size_x = 2, local_size_y = 1, local_size_z = 1) in;
 layout(set = 0, binding = 0, std140) uniform restrict paramBuffer {
     float baseAmplitude;
     float baseFrequency;
-    float basePhase;
     float lacunarity;
     float gain;
 };
@@ -26,7 +25,7 @@ void main() {
     float dirY = cos(multiplier);
     float amplitude = baseAmplitude * pow(lacunarity, gl_GlobalInvocationID.x);
     float frequency = baseFrequency * pow(gain, gl_GlobalInvocationID.x);
-    float phase = basePhase * pow(1.07, gl_GlobalInvocationID.x);
-    imageStore(waveTexture, ivec2(gl_GlobalInvocationID.x, 0), vec4(dirX, dirY, 0.0, 0.0));
-    imageStore(waveTexture, ivec2(gl_GlobalInvocationID.x, 1), vec4(amplitude, frequency, phase, 0.0));
+    float phase = cos(multiplier) * 10.0;
+    imageStore(waveTexture, ivec2(gl_GlobalInvocationID.x, 0), vec4(dirX, dirY, phase, 1.0));
+    imageStore(waveTexture, ivec2(gl_GlobalInvocationID.x, 1), vec4(amplitude, frequency, 0.0, 1.0));
 }

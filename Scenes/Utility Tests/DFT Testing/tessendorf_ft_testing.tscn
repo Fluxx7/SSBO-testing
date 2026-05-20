@@ -1,0 +1,133 @@
+[gd_scene format=3 uid="uid://cqa57oulg15jk"]
+
+[ext_resource type="Script" uid="uid://b5ltjxf4p2djx" path="res://assets/Scripts/2D/ComputeController.cs" id="1_85ope"]
+[ext_resource type="Script" uid="uid://bt51qx4gf17hx" path="res://assets/Scripts/2D/TimeLabel.cs" id="2_85ope"]
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_1h3e0"]
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_xal5h"]
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_wpgpu"]
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_skmxa"]
+
+[node name="Node2D" type="Node2D" unique_id=1455750865]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1079435629]
+position = Vector2(576, 325)
+
+[node name="ComputeController" type="Node2D" parent="." unique_id=1861999166 node_paths=PackedStringArray("spectrumTexRect", "displaceTexRect", "gradientTexRect", "initialSpectrumTexRect")]
+script = ExtResource("1_85ope")
+_windSpeed10 = 20.0
+_windSpeed19 = 28.0
+_windDirection = Vector2(30, 45)
+_fetch = 1000.0
+_tileLength = 256.0
+spectrumTexRect = NodePath("../HBoxContainer/VBoxContainer3/Spectrum")
+displaceTexRect = NodePath("../HBoxContainer/VBoxContainer2/Displacement")
+gradientTexRect = NodePath("../HBoxContainer/VBoxContainer4/Gradients")
+initialSpectrumTexRect = NodePath("../HBoxContainer/VBoxContainer/SpectrumZero")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1406973750]
+offset_left = 464.0
+offset_top = 400.0
+offset_right = 691.0
+offset_bottom = 553.0
+
+[node name="Spectrum Button" type="Button" parent="VBoxContainer" unique_id=1159957103]
+layout_mode = 2
+text = "Regenerate Spectrum"
+
+[node name="Output Button" type="Button" parent="VBoxContainer" unique_id=1256603498]
+layout_mode = 2
+text = "Regenerate Outputs"
+
+[node name="CheckButton" type="CheckButton" parent="VBoxContainer" unique_id=1992384035]
+layout_mode = 2
+button_pressed = true
+text = "Simulate"
+
+[node name="Label" type="Label" parent="VBoxContainer" unique_id=1065016591]
+layout_mode = 2
+text = "Current Time: "
+script = ExtResource("2_85ope")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1184238567]
+layout_direction = 2
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 184.0
+offset_top = 64.0
+offset_right = 960.0
+offset_bottom = 347.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer" unique_id=1832929974]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer" unique_id=1556497526]
+layout_mode = 2
+text = "Initial Spectrum Map"
+horizontal_alignment = 1
+
+[node name="SpectrumZero" type="TextureRect" parent="HBoxContainer/VBoxContainer" unique_id=1096941785]
+texture_filter = 1
+texture_repeat = 1
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+texture = SubResource("Texture2DRD_1h3e0")
+expand_mode = 5
+
+[node name="VBoxContainer3" type="VBoxContainer" parent="HBoxContainer" unique_id=930824746]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer3" unique_id=54730807]
+layout_mode = 2
+text = "Spectrum Map"
+horizontal_alignment = 1
+
+[node name="Spectrum" type="TextureRect" parent="HBoxContainer/VBoxContainer3" unique_id=1361679376]
+texture_filter = 1
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+texture = SubResource("Texture2DRD_xal5h")
+expand_mode = 5
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="HBoxContainer" unique_id=1097696716]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer2" unique_id=938603561]
+layout_mode = 2
+text = "Displacement Map"
+horizontal_alignment = 1
+
+[node name="Displacement" type="TextureRect" parent="HBoxContainer/VBoxContainer2" unique_id=1158119480]
+texture_filter = 1
+texture_repeat = 1
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+texture = SubResource("Texture2DRD_wpgpu")
+expand_mode = 5
+
+[node name="VBoxContainer4" type="VBoxContainer" parent="HBoxContainer" unique_id=217140368]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer4" unique_id=709690620]
+layout_mode = 2
+text = "Gradient Map"
+horizontal_alignment = 1
+
+[node name="Gradients" type="TextureRect" parent="HBoxContainer/VBoxContainer4" unique_id=132210674]
+texture_filter = 1
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+texture = SubResource("Texture2DRD_skmxa")
+expand_mode = 5
+
+[connection signal="pressed" from="VBoxContainer/Spectrum Button" to="ComputeController" method="RegenerateWaves"]
+[connection signal="pressed" from="VBoxContainer/Output Button" to="ComputeController" method="GenerateWaves"]
+[connection signal="toggled" from="VBoxContainer/CheckButton" to="ComputeController" method="toggleSimulate"]

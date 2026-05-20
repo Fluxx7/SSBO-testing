@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://bc22om5lfkc36"
+path="res://.godot/imported/map_gen.glsl-a23d7b90e042f32102c2e18c6ae330a9.res"
+
+[deps]
+
+source_file="res://assets/Shaders/Compute/GLSL/Spectrums/map_gen.glsl"
+dest_files=["res://.godot/imported/map_gen.glsl-a23d7b90e042f32102c2e18c6ae330a9.res"]
+
+[params]
+

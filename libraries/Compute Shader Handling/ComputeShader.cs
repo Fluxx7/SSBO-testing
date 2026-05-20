@@ -50,10 +50,12 @@ public partial class ComputeShader(): RefCounted {
 	#region shader
 
 
+	public Rid GetPipelineRID(RenderingDevice rd) {
+		GeneratePipeline(rd);
+		return pipelines[rd];
+	}
 
-	public void Dispatch(RenderingDevice rd, uint x_threads, uint y_threads, uint z_threads, byte[] push_constants = null) {
-		prevRd = rd;
-		
+	private void GeneratePipeline(RenderingDevice rd) {
 		ulong modifiedTime = FileAccess.GetModifiedTime(shaderPath);
 		bool build = false;
 		// Update shader compilation and pipeline RID if the shader has been changed since last dispatched
@@ -78,11 +80,22 @@ public partial class ComputeShader(): RefCounted {
 			shaderComps[rd] = rd.ShaderCreateFromSpirV(shaderSpirV);
 			pipelines[rd] = rd.ComputePipelineCreate(shaderComps[rd]);
 		}
+	}
 
+
+	public Dictionary<uint, Rid> GetUniformSetRIDs(RenderingDevice rd) {
 		Dictionary<uint, Rid> uniformSetIDs = new();
 		foreach (var (index, set) in uniformSets) {
 			uniformSetIDs[index] = set.GetRID(rd, shaderComps[rd], index);
 		}
+
+		return uniformSetIDs;
+	}
+
+	public void Dispatch(RenderingDevice rd, uint x_threads, uint y_threads, uint z_threads, byte[] push_constants = null) {
+		prevRd = rd;
+		GeneratePipeline(rd);
+		Dictionary<uint, Rid> uniformSetIDs = GetUniformSetRIDs(rd);
 		
 		var computeList = rd.ComputeListBegin();
 		rd.ComputeListBindComputePipeline(computeList, pipelines[rd]);
@@ -96,7 +109,18 @@ public partial class ComputeShader(): RefCounted {
 		rd.ComputeListEnd();
 	}
 
+	public void Dispatch(RenderingDevice rd, uint x_threads, uint y_threads, uint z_threads, ByteBuffer push_constants) {
+		Dispatch(rd, x_threads, y_threads, z_threads, push_constants.Generate());
+	}
+	
 	public void Dispatch(uint x_threads, uint y_threads, uint z_threads, byte[] push_constants = null) {
+		prevRd ??= RenderingServer.GetRenderingDevice();
+		Dispatch(prevRd, x_threads, y_threads, z_threads, push_constants);
+	}
+	
+	
+	
+	public void Dispatch(uint x_threads, uint y_threads, uint z_threads, ByteBuffer push_constants) {
 		prevRd ??= RenderingServer.GetRenderingDevice();
 		Dispatch(prevRd, x_threads, y_threads, z_threads, push_constants);
 	}
@@ -113,10 +137,6 @@ public partial class ComputeShader(): RefCounted {
 	public void CreateTexture(StringName texture, uint x_size, uint y_size, uint set, uint binding) {
 		CreateTexture(texture, x_size, y_size);
 		AssignUniform(texture, set, binding);
-	}
-
-	public void BindTextureParameter(StringName texture, Callable callback) {
-		ShaderResourceStorage.BindTextureParameter(texture, callback);
 	}
 
 	public void AssignUniform(StringName uniform, uint set, uint binding) {
@@ -143,6 +163,10 @@ public partial class ComputeShader(): RefCounted {
 	
 	#region static 
 	
+	public static byte[] MakePushConstants(byte[] values = null) {
+		
+		return [];
+	}
 	public static void SetBuffer(StringName buffer, byte[] values = null) {
 		ShaderResourceStorage.SetBuffer(buffer, values);
 	}
@@ -156,6 +180,10 @@ public partial class ComputeShader(): RefCounted {
 		ShaderResourceStorage.SetTexture(tex_name, x_size, y_size, tex);
 	}
 	
+	public static void SetTextureSize(StringName tex_name, uint x_size, uint y_size) {
+		ShaderResourceStorage.SetTextureSize(tex_name, x_size, y_size);
+	}
+	
 	public static void CreateBuffer(StringName buffer, RenderingDevice.UniformType type, uint size_bytes, byte[] data = null) {
 		ShaderResourceStorage.CreateBuffer(buffer, type, size_bytes, data);
 	}
@@ -164,12 +192,20 @@ public partial class ComputeShader(): RefCounted {
 		ShaderResourceStorage.CreateTexture(texture, x_size, y_size);
 	}
 	
+	public static void CreateTexture(StringName texture, uint x_size, uint y_size, TextureResource.TextureType texture_type) {
+		ShaderResourceStorage.CreateTexture(texture, x_size, y_size, texture_type);
+	}
+	
 	public static byte[] GetBufferData(RenderingDevice rd, StringName buffer) {
 		return ShaderResourceStorage.GetBufferData(buffer, rd);
 	}
 	
 	public static void GetBufferDataAsync(RenderingDevice rd, StringName buffer, Callable callback) {
 		ShaderResourceStorage.GetBufferDataAsync(buffer, rd, callback);
+	}
+	
+	public static void BindTextureParameter(StringName texture, Callable callback) {
+		ShaderResourceStorage.BindTextureParameter(texture, callback);
 	}
 	
 	#endregion

@@ -4,6 +4,6 @@ using System;
 public partial class TimeLabel : Label
 {
 	public override void _Process(double delta) {
-		Text = "Time: " + Engine.GetFramesPerSecond();
+		Text = "FPS: " + Engine.GetFramesPerSecond();
 	}
 }

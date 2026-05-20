@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://8qxx4qgirqgb"]
+[gd_scene format=3 uid="uid://8qxx4qgirqgb"]
 
 [ext_resource type="Script" uid="uid://cky6u0t1f7a7w" path="res://assets/Scripts/Utility/FPSLabel.cs" id="1_fa8pb"]
 [ext_resource type="Script" uid="uid://clmjdrdn5dphs" path="res://assets/Scripts/Water/JonswapWater.cs" id="2_2leci"]
@@ -40,12 +40,12 @@ render_priority = 0
 shader = ExtResource("2_5h3li")
 shader_parameter/water_scatter_color = Color(3.85046e-07, 0.7007736, 0.5251843, 1)
 shader_parameter/air_bubble_color = Color(0.07341317, 0.114474334, 0.19907731, 1)
-shader_parameter/height_scale = 20.03
+shader_parameter/height_scale = 21.1
 shader_parameter/k2 = 0.2
 shader_parameter/k3 = 8.86
 shader_parameter/k4 = 2.9
 shader_parameter/air_bubble_density = 3.4
-shader_parameter/mapWorldScale = Vector4(0.0078125, -0.2, 1, 1)
+shader_parameter/mapWorldScale = Vector4(1000, 1, 0.001, 0.005)
 shader_parameter/displacementMap = SubResource("Texture2DRD_ea6jj")
 shader_parameter/gradientMap = SubResource("Texture2DRD_addil")
 shader_parameter/cutoff_dist = 1000.0
@@ -53,57 +53,49 @@ shader_parameter/cutoff_strength = 0.0007
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_21h3a"]
 material = SubResource("ShaderMaterial_57h4j")
-size = Vector2(1000, 1000)
-subdivide_width = 2048
-subdivide_depth = 2048
+size = Vector2(200, 200)
+subdivide_width = 512
+subdivide_depth = 512
 
-[node name="Node3D" type="Node3D"]
+[node name="Node3D" type="Node3D" unique_id=1407384273]
 
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=480031529]
 follow_viewport_enabled = true
 
-[node name="Label" type="Label" parent="CanvasLayer"]
+[node name="Label" type="Label" parent="CanvasLayer" unique_id=50007719]
 offset_left = 397.0
 offset_top = 2.0
 offset_right = 763.0
 offset_bottom = 31.0
 script = ExtResource("1_fa8pb")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer" unique_id=429824598]
 offset_right = 396.0
 offset_bottom = 239.0
 
-[node name="Button" type="Button" parent="CanvasLayer/VBoxContainer"]
+[node name="Button" type="Button" parent="CanvasLayer/VBoxContainer" unique_id=1165653449]
 layout_mode = 2
 text = "Regenerate Waves
 "
 
-[node name="Camera3D" type="Camera3D" parent="."]
+[node name="Camera3D" type="Camera3D" parent="." unique_id=322091660]
 transform = Transform3D(-0.9238795, 0.091282815, -0.37163705, 0, 0.9711343, 0.23853347, 0.3826835, 0.22037618, -0.8972111, 0, 3, 0)
 current = true
 script = ExtResource("2_ybqns")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=518806376]
 environment = SubResource("Environment_6kuhc")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment"]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=1967441659]
 transform = Transform3D(-0.9993919, 0.014859379, 0.03157799, 7.910258e-08, -0.9048261, 0.425779, 0.034899496, 0.42551947, 0.90427536, 0, 6.89, 0)
 
-[node name="Water" type="MeshInstance3D" parent="." node_paths=PackedStringArray("Camera")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0091286, -8.09885, -3.3721962)
+[node name="Water" type="MeshInstance3D" parent="." unique_id=1393861654 node_paths=PackedStringArray("Camera")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0000687, -8.098851, -3.3759842)
 mesh = SubResource("PlaneMesh_21h3a")
-skeleton = NodePath("")
 script = ExtResource("2_2leci")
-Subdivide = Vector2i(2048, 2048)
-Size = Vector2(1000, 1000)
+Size = Vector2(100, 100)
 Camera = NodePath("../Camera3D")
-ScatterColor = Color(3.85046e-07, 0.7007736, 0.5251843, 1)
-BubbleColor = Color(0.07341317, 0.114474334, 0.19907731, 1)
-WaterColor = Color(0.05112333, 3.3691526e-07, 0.34167245, 1)
-HeightScale = 20.03
-K2 = 0.2
-K3 = 8.86
-K4 = 2.9
-_tileMult = 1.0
+K2 = 2.33
+_tileSize = 512.0
 
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/Button" to="Water" method="RegenerateWaves"]

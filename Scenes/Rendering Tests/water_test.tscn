@@ -1,11 +1,9 @@
-[gd_scene load_steps=12 format=3 uid="uid://c7j36bvqcqrso"]
+[gd_scene format=3 uid="uid://c7j36bvqcqrso"]
 
 [ext_resource type="Script" uid="uid://8560q4g3mplt" path="res://assets/Scripts/Utility/DensityTarget.cs" id="1_8adiu"]
 [ext_resource type="Script" uid="uid://cky6u0t1f7a7w" path="res://assets/Scripts/Utility/FPSLabel.cs" id="1_g538k"]
 [ext_resource type="Script" uid="uid://d1qw1be7adl7v" path="res://assets/Scripts/Water/Water.cs" id="3_hgp32"]
-[ext_resource type="Shader" uid="uid://cf6cwynfn2fdn" path="res://assets/Shaders/sum_of_sines_water.gdshader" id="3_kxn0a"]
-[ext_resource type="ArrayMesh" uid="uid://dnpsd768884xg" path="res://assets/water_mesh.res" id="3_ql5bd"]
-[ext_resource type="Shader" uid="uid://bxwegidev13eg" path="res://assets/Shaders/sum_of_sines_water_tex.gdshader" id="4_kxn0a"]
+[ext_resource type="Shader" uid="uid://bxwegidev13eg" path="res://assets/Shaders/sum_of_sines_water_tex.gdshader" id="4_x3a0b"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_g538k"]
 sky_top_color = Color(2.887845e-06, 0, 0.6690019, 1)
@@ -36,101 +34,73 @@ fog_depth_curve = 2.46228
 fog_depth_begin = 0.0
 fog_depth_end = 335.5
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_g538k"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_laryo"]
 render_priority = 0
-shader = ExtResource("3_kxn0a")
-shader_parameter/time = 33.0594
-shader_parameter/water_scatter_color = Color(4.4520945e-07, 0.32814932, 0.18448636, 1)
-shader_parameter/air_bubble_color = Color(0, 0.08136409, 0.20619032, 1)
-shader_parameter/water_color = Color(0.0130490735, 0.059672564, 0.10764105, 1)
-shader_parameter/height_scale = 11.92999973334064
-shader_parameter/k2 = 8.80999980307888
-shader_parameter/k3 = 2.06999995373136
-shader_parameter/k4 = 3.33999992534432
-shader_parameter/air_bubble_density = 3.4
-shader_parameter/use_derivative_displacement = false
-shader_parameter/cutoff_dist = 1850.0
-shader_parameter/cutoff_strength = 0.0007
-shader_parameter/chopMod = 1.0
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_ho8b5"]
-render_priority = 0
-shader = ExtResource("4_kxn0a")
-shader_parameter/wm = 0.99
-shader_parameter/k = 1.0
-shader_parameter/m = 25.0
-shader_parameter/shiftClamp = Vector2(0.01, 0.96)
-shader_parameter/epsilon = 1e-05
-shader_parameter/size = Vector2(8000, 8000)
-shader_parameter/time = 22.162653
-shader_parameter/waveCount = 42
-shader_parameter/water_scatter_color = Color(0.4, 1.15, 0.85, 1)
-shader_parameter/air_bubble_color = Color(0.1, 0.18, 0.27, 1)
-shader_parameter/water_color = Color(0.1, 0.18, 0.35, 1)
-shader_parameter/height_scale = 2.5
-shader_parameter/k2 = 2.25
+shader = ExtResource("4_x3a0b")
+shader_parameter/time = 60.80881
+shader_parameter/water_scatter_color = Color(0.073152326, 0.94343406, 1.7287056e-06, 1)
+shader_parameter/air_bubble_color = Color(0.023414358, 0, 0.6174224, 1)
+shader_parameter/water_color = Color(0.0033474397, 0.087967, 0.19630623, 1)
+shader_parameter/height_scale = 17.58999960682832
+shader_parameter/k2 = 10.55999976396288
 shader_parameter/k3 = 0.35
 shader_parameter/k4 = 2.15
 shader_parameter/air_bubble_density = 3.4
-shader_parameter/use_derivative_displacement = true
-shader_parameter/deriv_displacement_mult = 1.7
-shader_parameter/useVertexShift = true
+shader_parameter/wave_count = 42
 shader_parameter/cutoff_dist = 1000.0
 shader_parameter/cutoff_strength = 0.0007
+shader_parameter/chopMod = 1.54
+shader_parameter/use_derivative_displacement = false
 
-[node name="Node3D" type="Node3D"]
+[sub_resource type="PlaneMesh" id="PlaneMesh_x3a0b"]
+material = SubResource("ShaderMaterial_laryo")
+size = Vector2(1000, 1000)
+subdivide_width = 512
+subdivide_depth = 512
 
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
+[node name="Node3D" type="Node3D" unique_id=1996271291]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1741337599]
 follow_viewport_enabled = true
 
-[node name="Label" type="Label" parent="CanvasLayer"]
+[node name="Label" type="Label" parent="CanvasLayer" unique_id=920053837]
 offset_left = 397.0
 offset_top = 2.0
 offset_right = 763.0
 offset_bottom = 31.0
 script = ExtResource("1_g538k")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer" unique_id=1494019554]
 offset_right = 396.0
 offset_bottom = 239.0
 
-[node name="Button" type="Button" parent="CanvasLayer/VBoxContainer"]
+[node name="Button" type="Button" parent="CanvasLayer/VBoxContainer" unique_id=1173222653]
 layout_mode = 2
 text = "Regenerate Waves
 "
 
-[node name="CheckButton" type="CheckButton" parent="CanvasLayer/VBoxContainer"]
-layout_mode = 2
-button_pressed = true
-text = "Use Buffers
-"
-
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(0.09410826, 0.03127135, -0.9950704, 0, 0.99950635, 0.03141075, 0.9955615, -0.002956013, 0.09406184, 0.008, 67.356, 0.628)
+[node name="Camera3D" type="Camera3D" parent="." unique_id=712581234]
+transform = Transform3D(0.09410826, 0.03127135, -0.9950704, 0, 0.99950635, 0.03141075, 0.9955615, -0.002956013, 0.09406184, -1.573, 17.252, 0.777)
 current = true
 script = ExtResource("1_8adiu")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=525605012]
 transform = Transform3D(-0.114937134, -0.24872066, 0.9617314, 0, 0.9681476, 0.25037998, -0.9933725, 0.028777966, -0.11127613, 0, 6.89, 0)
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=455630965]
 environment = SubResource("Environment_6kuhc")
 
-[node name="Water" type="MeshInstance3D" parent="."]
-transform = Transform3D(300, 0, 0, 0, 1, 0, 0, 0, 300, 55.057, 0, -12.904)
-mesh = ExtResource("3_ql5bd")
-skeleton = NodePath("")
+[node name="Water" type="MeshInstance3D" parent="." unique_id=578372761]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55.294052, 0.30945587, -12.993621)
+mesh = SubResource("PlaneMesh_x3a0b")
 script = ExtResource("3_hgp32")
-Time = 33.0594
-SumOfSinesMat = SubResource("ShaderMaterial_g538k")
-SumOfSinesTextureMat = SubResource("ShaderMaterial_ho8b5")
-_plane = ExtResource("3_ql5bd")
-BaseAmplitude = 10.0
-BaseFrequency = 0.015
-Gain = 1.16
-Lacunarity = 0.87
-BasePhase = 0.84
-PhaseModifier = 1.07
+Time = 60.80881
+SumOfSinesTextureMat = SubResource("ShaderMaterial_laryo")
+Size = Vector2(1000, 1000)
+Subdivide = 512
+BaseAmplitude = 3.0
+BaseFrequency = 0.06
+Gain = 1.2
+ChopModifier = 1.54
 
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/Button" to="Water" method="RegenerateWaves"]
-[connection signal="toggled" from="CanvasLayer/VBoxContainer/CheckButton" to="Water" method="ToggleBuffers"]
