@@ -28,6 +28,11 @@ public partial class FFTHandler: RefCounted {
 		_N = N;
 		Init(fft_data_buffer);
 	}
+	
+	public FFTHandler(uint N, uint fft_data_buffer) {
+		_N = N;
+		Init(fft_data_buffer);
+	}
 
 	~FFTHandler() {
 		twiddleGen.Close();
@@ -36,6 +41,19 @@ public partial class FFTHandler: RefCounted {
 	}
 
 	private void Init(StringName fft_data_buffer) {
+		nBuffer = new ByteBuffer(_N);
+		uint twiddles_id = twiddleGen.CreateInternalBuffer(RenderingDevice.UniformType.StorageBuffer, _N / 2 * vec2_size, 0, 0);
+		
+		naiveIfftStage.AssignUniform(twiddles_id, 0, 0);
+		naiveIfftStage.AssignUniform(fft_data_buffer,1, 0);
+		
+		ifftTranspose.AssignUniform(fft_data_buffer, 0, 0);
+		uniforms.Add("twiddles", twiddles_id);
+		BuildIFFTComputePlan();
+		
+	}
+	
+	private void Init(uint fft_data_buffer) {
 		nBuffer = new ByteBuffer(_N);
 		uint twiddles_id = twiddleGen.CreateInternalBuffer(RenderingDevice.UniformType.StorageBuffer, _N / 2 * vec2_size, 0, 0);
 		

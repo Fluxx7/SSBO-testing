@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://dl7ybny2ngi84"
+path="res://.godot/imported/pierson_moskowitz_gen.glsl-54626ec0bbbe3660496405e45a2404be.res"
+
+[deps]
+
+source_file="res://assets/Shaders/Compute/GLSL/Spectrums/pierson_moskowitz_gen.glsl"
+dest_files=["res://.godot/imported/pierson_moskowitz_gen.glsl-54626ec0bbbe3660496405e45a2404be.res"]
+
+[params]
+

@@ -1,32 +1,41 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 using GraphicsTesting.assets.Scripts.Utility;
 using GraphicsTesting.Libraries.ComputeShaderHandling;
 
-public partial class ComputeController : Node2D
-{
-	
+public partial class WaterController : Node {
+
 	enum SpectrumFunction {
 		Tessendorf,
 		TessendorfAB,
 		JONSWAP,
 		PiersonMoskowitz
 	}
-	
+
 	enum DirectionalSpreadingFunction {
 		None,
 		Tessendorf
 	}
-	
+
 	private bool _simulate = true;
-	[Export] private float _tileLength = 500.0f;
+	private float _tileLength = 256.0f;
+
+	[Export] public float TileLength {
+		get => _tileLength;
+		set {
+			_tileLength = value;
+			RenderingServer.GlobalShaderParameterSet("tileLength", value);
+			RegenerateWaves();
+		}
+	}
 	[Export] private SpectrumFunction spectrum = SpectrumFunction.JONSWAP;
 	[Export] private DirectionalSpreadingFunction spread = DirectionalSpreadingFunction.Tessendorf;
-	[Export] private float _depth = 500.0f;
+	[Export] private float _depth = 1000.0f;
 	[ExportGroup("JONSWAP Parameters")] 
 	[Export] private float _windSpeedJonswap = 10.0f;
 	[Export] private float _windDirectionJonswap;
-	[Export] private float _fetch = 100.0f;
+	[Export] private float _fetch = 10000.0f;
 	
 	
 	[ExportGroup("Philips Parameters")] 
@@ -46,13 +55,14 @@ public partial class ComputeController : Node2D
 	[Export] public TextureRect gradientTexRect;
 	[Export] public TextureRect foamTexRect;
 	[Export] public TextureRect initialSpectrumTexRect;
+	[Export] public TextureRect normalTexRect;
 
 	private ComputeShader jonswapGen = new("res://assets/Shaders/Compute/GLSL/Spectrums/jonswap_gen.glsl");
 	private ComputeShader tessendorfGen = new("res://assets/Shaders/Compute/GLSL/Spectrums/tessendorf_spectrum_gen.glsl");
 	private ComputeShader abSpectrumGen = new("res://assets/Shaders/Compute/GLSL/Spectrums/a_b_spectrum_gen.glsl");
 	private ComputeShader tessendorfSpreading = new("res://assets/Shaders/Compute/GLSL/Spreadings/tessendorf_spreading.glsl");
 	private ComputeShader noSpreading = new("res://assets/Shaders/Compute/GLSL/Spreadings/no_spreading.glsl");
-	private TessendorfFFTHandler fftHandler;
+	[Export] private TessendorfFFTHandler fftHandler;
 	private float _currentSeed;
 	private float _time;
 
@@ -79,6 +89,16 @@ public partial class ComputeController : Node2D
 	private uint _texSize = (uint) Math.Pow(2, starting_pow);
 	private const float g = 9.81f;
 
+	private Dictionary<StringName, uint> shaderUniforms = new();
+
+	public void UpdateProperty(Variant value, StringName property) {
+		switch (property) {
+			case "TileLength":
+				TileLength = value.AsSingle();
+				break;
+		}
+	}
+	
 	public void ToggleSimulate(bool sim) {
 		_simulate = sim;
 	}
@@ -87,6 +107,7 @@ public partial class ComputeController : Node2D
 		InitShaders();
 		GenerateSpectrum();
 		GenerateWaves(0.0f);
+		RenderingServer.GlobalShaderParameterSet("tileLength", _tileLength);
 	}
 
 	public override void _Process(double delta) {
@@ -107,47 +128,72 @@ public partial class ComputeController : Node2D
 	}
 
 	private void InitShaders() {
-		ComputeShader.CreateTexture("gaussian_noise", _texSize, _texSize);
-		ComputeShader.CreateTexture("baseSpectrumTexture", _texSize, _texSize);
-		ComputeShader.CreateTexture("spectrumTexture", _texSize, _texSize);
-		ComputeShader.BindTextureParameter("baseSpectrumTexture", 
+		uint gaussian_noise_id = ComputeShader.CreateInternalTexture(_texSize, _texSize);
+		uint base_spectrum_tex_id = ComputeShader.CreateInternalTexture(_texSize, _texSize);
+		uint spectrum_tex_id = ComputeShader.CreateInternalTexture(_texSize, _texSize);
+		uint displacement_tex_id = ComputeShader.CreateInternalTexture(_texSize, _texSize);
+		uint gradient_tex_id = ComputeShader.CreateInternalTexture(_texSize, _texSize);
+		uint foam_tex_id = ComputeShader.CreateInternalTexture(_texSize, _texSize);
+		uint normal_tex_id = ComputeShader.CreateInternalTexture(_texSize, _texSize);
+		
+		ComputeShader.BindInternalTextureParameter(base_spectrum_tex_id, 
 			Callable.From(
 				(Texture2Drd baseSpectrum) => (initialSpectrumTexRect.Texture = baseSpectrum)));
-		ComputeShader.BindTextureParameter("spectrumTexture", 
+		ComputeShader.BindInternalTextureParameter(spectrum_tex_id, 
 			Callable.From(
 				(Texture2Drd spectrumTexture) => (spectrumTexRect.Texture = spectrumTexture)));
+		ComputeShader.BindInternalTextureParameter(normal_tex_id, 
+			Callable.From(
+				(Texture2Drd normalTexture) => {
+					RenderingServer.GlobalShaderParameterSet("normalMap", normalTexture);
+					return normalTexRect.Texture = normalTexture;
+				}));
 		
-		ComputeShader.CreateTexture("displacementMap", _texSize, _texSize);
-		ComputeShader.CreateTexture("gradientMap", _texSize, _texSize);
-		ComputeShader.BindTextureParameter("displacementMap", 
+		ComputeShader.BindInternalTextureParameter(displacement_tex_id, 
 			Callable.From(
-				(Texture2Drd displacementTexture) => (displaceTexRect.Texture = displacementTexture)));
-		ComputeShader.BindTextureParameter("gradientMap", 
+				(Texture2Drd displacementTexture) => {
+					RenderingServer.GlobalShaderParameterSet("displacementMap", displacementTexture);
+					return displaceTexRect.Texture = displacementTexture;
+				}));
+		ComputeShader.BindInternalTextureParameter(gradient_tex_id, 
 			Callable.From(
-				(Texture2Drd gradientTexture) => (gradientTexRect.Texture = gradientTexture)));
-		ComputeShader.CreateTexture("foamMap", _texSize, _texSize);
-		ComputeShader.BindTextureParameter("foamMap", 
+				(Texture2Drd gradientTexture) => {
+					RenderingServer.GlobalShaderParameterSet("gradientMap", gradientTexture);
+					return gradientTexRect.Texture = gradientTexture;
+				}));
+		ComputeShader.BindInternalTextureParameter(foam_tex_id, 
 			Callable.From(
-				(Texture2Drd foamTexture) => (foamTexRect.Texture = foamTexture)));
+				(Texture2Drd foamTexture) => {
+					RenderingServer.GlobalShaderParameterSet("foamMap", foamTexture);
+					return foamTexRect.Texture = foamTexture;
+				}));
+		
+		shaderUniforms.Add("gaussian_noise", gaussian_noise_id);
+		shaderUniforms.Add("baseSpectrumTexture", base_spectrum_tex_id);
+		shaderUniforms.Add("spectrumTexture", spectrum_tex_id);
+		shaderUniforms.Add("displacementMap", displacement_tex_id);
+		shaderUniforms.Add("gradientMap", gradient_tex_id);
+		shaderUniforms.Add("foamMap", foam_tex_id);
+		
 		InitSpectrums();
 		InitSpreads();
-		fftHandler = new TessendorfFFTHandler(_texSize, "baseSpectrumTexture", "spectrumTexture", "displacementMap", "gradientMap", "foamMap");
+		fftHandler = new TessendorfFFTHandler(_texSize, base_spectrum_tex_id, spectrum_tex_id, displacement_tex_id, gradient_tex_id, foam_tex_id, normal_tex_id);
 	}
 
 	private void InitSpectrums() {
-		tessendorfGen.AssignUniform("baseSpectrumTexture", 0, 0);
+		tessendorfGen.AssignUniform(shaderUniforms["baseSpectrumTexture"], 0, 0);
 		
-		abSpectrumGen.AssignUniform("baseSpectrumTexture", 0, 0);
+		abSpectrumGen.AssignUniform(shaderUniforms["baseSpectrumTexture"], 0, 0);
 		
-		jonswapGen.AssignUniform("baseSpectrumTexture", 0, 0);
+		jonswapGen.AssignUniform(shaderUniforms["baseSpectrumTexture"], 0, 0);
 	}
 
 	private void InitSpreads() {
-		noSpreading.AssignUniform("baseSpectrumTexture", 0, 0);
-		noSpreading.AssignUniform("gaussian_noise", 0, 1);
+		noSpreading.AssignUniform(shaderUniforms["baseSpectrumTexture"], 0, 0);
+		noSpreading.AssignUniform(shaderUniforms["gaussian_noise"], 0, 1);
 		
-		tessendorfSpreading.AssignUniform("baseSpectrumTexture", 0, 0);
-		tessendorfSpreading.AssignUniform("gaussian_noise", 0, 1);
+		tessendorfSpreading.AssignUniform(shaderUniforms["baseSpectrumTexture"], 0, 0);
+		tessendorfSpreading.AssignUniform(shaderUniforms["gaussian_noise"], 0, 1);
 	}
 
 	private void DispatchTessendorf() {
@@ -173,6 +219,7 @@ public partial class ComputeController : Node2D
 	}
 	
 	private void GenerateWaves(float delta) {
+		
 		fftHandler.Run(delta, _time, _tileLength, _depth);
 	}
 	
@@ -189,7 +236,7 @@ public partial class ComputeController : Node2D
 			}
 		}
 
-		ComputeShader.SetTexture("gaussian_noise", _texSize, _texSize, gaussian);
+		ComputeShader.SetInternalTexture(shaderUniforms["gaussian_noise"], _texSize, _texSize, gaussian);
 		float windDir = 0;
 		var a = 0f;
 		var b = 0f;

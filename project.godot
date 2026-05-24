@@ -21,6 +21,8 @@ file_logging/enable_file_logging=true
 
 [display]
 
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/vsync/vsync_mode=0
@@ -54,4 +56,24 @@ spectrumTexture={
 gaussian={
 "type": "sampler2D",
 "value": ""
+}
+foamMap={
+"type": "sampler2D",
+"value": ""
+}
+normalMap={
+"type": "sampler2D",
+"value": ""
+}
+debugRender={
+"type": "int",
+"value": 0
+}
+renderFlags={
+"type": "uint",
+"value": 15
+}
+tileLength={
+"type": "float",
+"value": 0.0
 }

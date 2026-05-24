@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://c8roe3egcgo4x"
+path="res://.godot/imported/tessendorf_spreading.glsl-b6ca9436f1faa769eb360cc7cec64b2c.res"
+
+[deps]
+
+source_file="res://assets/Shaders/Compute/GLSL/Spreadings/tessendorf_spreading.glsl"
+dest_files=["res://.godot/imported/tessendorf_spreading.glsl-b6ca9436f1faa769eb360cc7cec64b2c.res"]
+
+[params]
+

@@ -17,5 +17,5 @@ void main() {
     if (gl_GlobalInvocationID.x >= (N / 2)) return;
     uint x = gl_GlobalInvocationID.x;
     float theta = 2.0 * PI * float(x) / float(N);
-    twiddles[x] = vec2(cos(theta), sin(theta));
+    twiddles[x] = vec2(cos(theta), -sin(theta));
 }

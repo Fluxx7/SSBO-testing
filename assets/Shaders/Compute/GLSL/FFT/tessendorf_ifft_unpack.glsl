@@ -5,7 +5,7 @@
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-layout(set = 0, binding = 0, std430) buffer readonly restrict fft_height_buffers {
+layout(set = 0, binding = 0, std430) buffer readonly restrict fft_displacement_buffers {
     vec4 fft_data[][2];
 };
 
@@ -13,21 +13,19 @@ layout(set = 0, binding = 1, std430) buffer readonly restrict fft_gradient_buffe
     vec4 fft_grad_data[][2];
 };
 
-layout(set = 0, binding = 2, std430) buffer readonly restrict fft_displacement_buffers {
-    vec4 fft_disp_data[][2];
-};
 
 
 
 layout(rgba32f, set = 1, binding = 0) restrict writeonly uniform image2D heightTexture;
 layout(rgba32f, set = 1, binding = 1) restrict writeonly uniform image2D gradientTexture;
+layout(rgba32f, set = 1, binding = 2) restrict uniform image2D foamTexture;
+layout(rgba32f, set = 1, binding = 3) restrict writeonly uniform image2D normalTexture;
 
 layout(push_constant) restrict readonly uniform PushConstants {
     int texSize;
-    float time;       // seconds
-    float tile_length; // meters
-    float depth; // meters
-    uint curr_source_height;
+    float foam_grow_rate;
+    float foam_decay_rate;
+    float whitecap;
     uint curr_source_disp;
     uint curr_source_grad;
 };
@@ -38,19 +36,34 @@ layout(push_constant) restrict readonly uniform PushConstants {
 #define fft_grad_index(x, y, b) fft_grad_data[ x + y * texSize][ b ] 
 #define fft_grad_vindex(v, b) fft_grad_data[ v.x + v.y * texSize][ b ] 
 
-#define fft_disp_index(x, y, b) fft_disp_data[ x + y * texSize][ b ] 
-#define fft_disp_vindex(v, b) fft_disp_data[ v.x + v.y * texSize][ b ] 
-
 void main() {
     if (gl_GlobalInvocationID.x >= texSize) return;
     if (gl_GlobalInvocationID.y >= texSize) return;
     ivec2 id = ivec2(gl_GlobalInvocationID.xy);
     
     const float sign_shift = -2*((id.x & 1) ^ (id.y & 1)) + 1;
-    float height = fft_vindex(id, curr_source_height).x;
-    vec2 displacement = fft_disp_vindex(id, curr_source_disp).xz;
-    vec2 derivs = fft_grad_vindex(id, curr_source_grad).xz;
+    const float scale = 1.0f;
+    vec3 displacement = fft_vindex(id, curr_source_disp).xzw * scale;
+    vec2 gradients = fft_grad_vindex(id, curr_source_grad).xy * sign_shift * scale;
+    vec3 normal = normalize(vec3(-gradients.x, 1.0, -gradients.y));
+    float dx_dz = fft_vindex(id, curr_source_disp).y * sign_shift;
+    float dx_dx = fft_grad_vindex(id, curr_source_grad).z * sign_shift;
+    float dz_dz = fft_grad_vindex(id, curr_source_grad).w * sign_shift;
+
+    gradients = gradients / (1.0 + abs(vec2(dx_dx, dz_dz)));
     
-    imageStore(heightTexture, id, vec4(vec3(displacement.x, height, displacement.y) * sign_shift, 1.0));
-    imageStore(gradientTexture, id, vec4(derivs * sign_shift, 0.0, 1.0) );
+    imageStore(heightTexture, id, vec4(displacement * sign_shift, 1.0));
+    imageStore(gradientTexture, id, vec4(gradients.x, 0.0, gradients.y, 1.0) );
+    imageStore(normalTexture, id, vec4(normal, 1.0));
+
+    
+
+    float jacobian = (dx_dx) * (dz_dz) - dx_dz * dx_dz;
+
+    float foam_factor = -min(0.0, jacobian - whitecap);
+    float foam = imageLoad(foamTexture, id).x;
+    foam *= exp(-foam_decay_rate);
+    foam += foam_factor * foam_grow_rate;
+    foam = clamp(foam, 0.0f, 1.0f);
+    imageStore(foamTexture, id, vec4(foam, foam, foam, 1.0));
 }

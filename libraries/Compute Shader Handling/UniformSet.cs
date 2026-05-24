@@ -23,6 +23,7 @@ public partial class UniformSet : RefCounted {
 		rids.Clear();
 		rebuild.Clear();
 		namedUniforms.Clear();
+		internalUniforms.Clear();
 		foreach (var (_, uniform) in namedUniforms) {
 			ShaderResourceStorage.Close(uniform);
 		}

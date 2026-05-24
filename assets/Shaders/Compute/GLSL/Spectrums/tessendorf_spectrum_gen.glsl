@@ -10,30 +10,18 @@ layout(rgba32f, set = 0, binding = 0) restrict writeonly uniform image2D baseSpe
 layout(push_constant) restrict readonly uniform PushConstants {
     int texSize;
     float windSpeed;
-    float fetch;
+    float A;
     float tile_length;
 };
 
-float jonswap_spectrum(vec2 k_vec) {
+float philips_spectrum(float A, vec2 k_vec) {
     const float g = 9.81;
-    const float A = 0.076 * pow(windSpeed * windSpeed / (fetch * g), 0.22);
-    const float peak_enhancement = 3.3f;
-    const float omega_peak = 22.0 * g * g / (windSpeed * fetch);
     float k = length(k_vec);
     float kRcp = 1.0;
-
-     if (k > 1e-6) {
+    if (k > 1e-6) {
         kRcp = 1.0/k;
     }
-
-    const float sigma = k > omega_peak ? 0.09 : 0.07;
-    const float r = exp(- pow(k - omega_peak, 2.0) / (2.0 * sigma * sigma * omega_peak * omega_peak));
-
-    float first_term = A * g * g * pow(kRcp, 5.0);
-    float second_term = exp(-1.25f * pow(omega_peak * kRcp, 4.0));
-
-   
-    return first_term * second_term * pow(peak_enhancement, r);
+    return A * exp( -1.0f * g * g / pow(windSpeed, 4.0) * kRcp * kRcp) * pow(kRcp, 4.0);
 }
 
 void main() {
@@ -42,5 +30,5 @@ void main() {
     ivec2 id = ivec2(gl_GlobalInvocationID.xy);
 
     vec2 k_vec = 2.0 * PI * (id - texSize * 0.5) / tile_length;
-    imageStore(baseSpectrum, id, vec4(jonswap_spectrum(k_vec), 0.0, 0.0, 1.0));
+    imageStore(baseSpectrum, id, vec4(philips_spectrum(A, k_vec), 0.0, 0.0, 1.0));
 }

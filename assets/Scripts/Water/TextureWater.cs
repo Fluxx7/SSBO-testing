@@ -5,7 +5,7 @@ using GraphicsTesting.Libraries.ComputeShaderHandling;
 
 namespace GraphicsTesting.assets.Scripts.Utility;
 
-public partial class JonswapWater : MeshInstance3D {
+public partial class TextureWater : MeshInstance3D {
 	private ShaderMaterial _shader;
 	[Export] public Vector2I Subdivide = new(256, 256);
 	[Export] public Vector2 Size = new(500f,500f);
@@ -15,6 +15,7 @@ public partial class JonswapWater : MeshInstance3D {
 	private float _prevCameraFov;
 	private bool _simulate = true;
 
+	#region shaderparams
 	[ExportGroup("Shader Parameters")] 
 
 	private Color _scatterColor = new(0x00b82aFF);
@@ -104,45 +105,33 @@ public partial class JonswapWater : MeshInstance3D {
 			_shader?.SetShaderParameter("air_bubble_density", value);
 		}
 	}
+	#endregion
 
-	[ExportGroup("")]
-	// [ExportToolButton("Regenerate Waves")]
-	// private Callable RegenWaves => Callable.From(RegenerateWaves);
-	// [ExportToolButton("Simulate")]
-	// private Callable Simulate => Callable.From(() => (_simulate = !_simulate));
-	// [ExportToolButton("Update Waves")]
-	// private Callable UpdateWaves => Callable.From(GenerateWaves);
-
-	private ComputeShader jonswapGen = new("res://assets/Shaders/Compute/GLSL/Spectrums/jonswap_gen_fixed.glsl");
+	[ExportGroup("")] [Export] private WaterController waterController;
 	private TessendorfFFTHandler fftGen;
 	private float _currentSeed;
 	private Vector3 _previousCameraLocation;
 	private Basis _previousCameraBasis;
 	private Vector3 _previousLocation;
 	private float _time;
-	private uint _texSize = 512;
-	[Export] private float _tileSize = 1000f;
 
-	private void InitShaders() {
-		ByteBuffer jonswapParams = new ByteBuffer().Add([20f, 28f, 30f, 45f, 1000f, 3.3f, 5000f, _tileSize]);
-		
-		jonswapGen.CreateBuffer("jonswapParams", RenderingDevice.UniformType.UniformBuffer, 32u, 0, 0, jonswapParams.Generate());
-		jonswapGen.CreateTexture("gaussian_noise", _texSize, _texSize, 0, 1);
-		jonswapGen.CreateTexture("baseSpectrumTexture", _texSize, _texSize, 1, 0);
-		ComputeShader.CreateTexture("spectrumTexture", _texSize, _texSize);
-		ComputeShader.CreateTexture("displacementMap", _texSize, _texSize);
-		ComputeShader.CreateTexture("gradientMap", _texSize, _texSize);
-		
-		ComputeShader.BindTextureParameter("displacementMap", 
-			Callable.From(
-				(Texture2Drd texUniform) => 
-					_shader.SetShaderParameter("displacementMap", texUniform)));
-		ComputeShader.BindTextureParameter("gradientMap", 
-			Callable.From(
-				(Texture2Drd texUniform) => 
-					_shader.SetShaderParameter("gradientMap", texUniform)));
-		
-		fftGen = new TessendorfFFTHandler(_texSize, "baseSpectrumTexture", "spectrumTexture", "displacementMap", "gradientMap");
+	public void UpdateProperty(Variant value, StringName property) {
+		switch (property) {
+			case "BubbleColor":
+				BubbleColor = value.AsColor();
+				break;
+			case "WaterColor":
+				WaterColor = value.AsColor();
+				break;
+			case "ScatterColor":
+				ScatterColor = value.AsColor();
+				break;
+		}
+	}
+
+
+	private void Simulate(bool simulate) {
+		_simulate = simulate;
 	}
 	
 	public override void _Ready() {
@@ -151,9 +140,6 @@ public partial class JonswapWater : MeshInstance3D {
 		}
 		_shader = new ShaderMaterial();
 		_shader.SetShader(GD.Load<Shader>("res://assets/Shaders/jonswap_water.gdshader"));
-		InitShaders();
-		GenerateJonswap();
-		GenerateWaves();
 		_shader.SetShaderParameter("water_scatter_color", ScatterColor);
 		_shader.SetShaderParameter("air_bubble_color", BubbleColor);
 		_shader.SetShaderParameter("water_color", WaterColor);
@@ -162,6 +148,7 @@ public partial class JonswapWater : MeshInstance3D {
 		_shader.SetShaderParameter("k3", K3);
 		_shader.SetShaderParameter("k4", K4);
 		_shader.SetShaderParameter("air_bubble_density", BubbleDensity);
+		_shader.SetShaderParameter("mapWorldScale", new Vector4(1f, 1f, 1f, 1f));
 		Camera ??= GetViewport().GetCamera3D();
 	}
 
@@ -185,41 +172,6 @@ public partial class JonswapWater : MeshInstance3D {
 
 		if (_simulate) {
 			_time += (float)delta;
-			GenerateWaves();
 		}
-	}
-	
-	public override void _ExitTree() {
-		jonswapGen.Close();
-		base._ExitTree();
-	}
-
-	private void RegenerateWaves() {
-		GenerateJonswap();
-		GenerateWaves();
-	}
-
-	private void GenerateWaves() {
-		fftGen.Run(_time, _tileSize, 500.0f);
-	}
-
-	private void GenerateJonswap() {
-		var rng = new RandomNumberGenerator();
-		Image gaussian = Image.CreateEmpty((int)_texSize, (int)_texSize, false, Image.Format.Rgbaf);
-		for (int u = 0; u < _texSize; u++) {
-			for (int v = 0; v < _texSize; v++) {
-				Color new_pixel = new Color();
-				new_pixel.R = rng.Randfn();
-				new_pixel.G = rng.Randfn();
-				new_pixel.A = 1f;
-				gaussian.SetPixel(u,v, new_pixel);
-			}
-		}
-
-		ComputeShader.SetTexture("gaussian_noise", _texSize, _texSize, gaussian);
-		
-		jonswapGen.Dispatch(_texSize / 16, _texSize / 16, 1, new ByteBuffer(_texSize));
-		_shader.SetShaderParameter("mapWorldScale", new Vector4(_tileSize, 1f, .001f, .005f));
-		
 	}
 }

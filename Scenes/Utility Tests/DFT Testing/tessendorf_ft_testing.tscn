@@ -12,27 +12,33 @@
 [sub_resource type="Texture2DRD" id="Texture2DRD_skmxa"]
 
 [node name="Node2D" type="Node2D" unique_id=1455750865]
+texture_filter = 2
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1079435629]
 position = Vector2(576, 325)
 
-[node name="ComputeController" type="Node2D" parent="." unique_id=1861999166 node_paths=PackedStringArray("spectrumTexRect", "displaceTexRect", "gradientTexRect", "initialSpectrumTexRect")]
+[node name="ComputeController" type="Node2D" parent="." unique_id=1861999166 node_paths=PackedStringArray("spectrumTexRect", "displaceTexRect", "gradientTexRect", "foamTexRect", "initialSpectrumTexRect")]
 script = ExtResource("1_85ope")
-_windSpeed10 = 20.0
-_windSpeed19 = 28.0
-_windDirection = Vector2(30, 45)
-_fetch = 1000.0
 _tileLength = 256.0
+spectrum = 0
+spread = 0
+_depth = 15.0
+_windSpeedJonswap = 25.0
+_fetch = 10000.0
+_windSpeedPhillips = 25.0
+_windSpeedPierMosk = 25.0
 spectrumTexRect = NodePath("../HBoxContainer/VBoxContainer3/Spectrum")
-displaceTexRect = NodePath("../HBoxContainer/VBoxContainer2/Displacement")
-gradientTexRect = NodePath("../HBoxContainer/VBoxContainer4/Gradients")
+displaceTexRect = NodePath("../HBoxContainer2/VBoxContainer2/Displacement")
+gradientTexRect = NodePath("../HBoxContainer2/VBoxContainer4/Gradients")
+foamTexRect = NodePath("../HBoxContainer2/VBoxContainer5/Foam")
 initialSpectrumTexRect = NodePath("../HBoxContainer/VBoxContainer/SpectrumZero")
+texPower = 9
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1406973750]
-offset_left = 464.0
-offset_top = 400.0
-offset_right = 691.0
-offset_bottom = 553.0
+offset_left = 881.0
+offset_top = 83.0
+offset_right = 1108.0
+offset_bottom = 236.0
 
 [node name="Spectrum Button" type="Button" parent="VBoxContainer" unique_id=1159957103]
 layout_mode = 2
@@ -59,10 +65,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 184.0
-offset_top = 64.0
-offset_right = 960.0
-offset_bottom = 347.0
+offset_left = 13.0
+offset_top = 23.0
+offset_right = 789.0
+offset_bottom = 306.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -97,15 +103,29 @@ layout_mode = 2
 texture = SubResource("Texture2DRD_xal5h")
 expand_mode = 5
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="HBoxContainer" unique_id=1097696716]
+[node name="HBoxContainer2" type="HBoxContainer" parent="." unique_id=1266878689]
+layout_direction = 2
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 12.0
+offset_top = 359.0
+offset_right = 788.0
+offset_bottom = 642.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="HBoxContainer2" unique_id=1010269644]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer2" unique_id=938603561]
+[node name="Label" type="Label" parent="HBoxContainer2/VBoxContainer2" unique_id=228203412]
 layout_mode = 2
 text = "Displacement Map"
 horizontal_alignment = 1
 
-[node name="Displacement" type="TextureRect" parent="HBoxContainer/VBoxContainer2" unique_id=1158119480]
+[node name="Displacement" type="TextureRect" parent="HBoxContainer2/VBoxContainer2" unique_id=920046103]
 texture_filter = 1
 texture_repeat = 1
 custom_minimum_size = Vector2(256, 0)
@@ -113,16 +133,30 @@ layout_mode = 2
 texture = SubResource("Texture2DRD_wpgpu")
 expand_mode = 5
 
-[node name="VBoxContainer4" type="VBoxContainer" parent="HBoxContainer" unique_id=217140368]
+[node name="VBoxContainer4" type="VBoxContainer" parent="HBoxContainer2" unique_id=1407423987]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer4" unique_id=709690620]
+[node name="Label" type="Label" parent="HBoxContainer2/VBoxContainer4" unique_id=1015019380]
 layout_mode = 2
 text = "Gradient Map"
 horizontal_alignment = 1
 
-[node name="Gradients" type="TextureRect" parent="HBoxContainer/VBoxContainer4" unique_id=132210674]
+[node name="Gradients" type="TextureRect" parent="HBoxContainer2/VBoxContainer4" unique_id=1238753423]
 texture_filter = 1
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+texture = SubResource("Texture2DRD_skmxa")
+expand_mode = 5
+
+[node name="VBoxContainer5" type="VBoxContainer" parent="HBoxContainer2" unique_id=2004308221]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer2/VBoxContainer5" unique_id=1834925481]
+layout_mode = 2
+text = "Foam Map"
+horizontal_alignment = 1
+
+[node name="Foam" type="TextureRect" parent="HBoxContainer2/VBoxContainer5" unique_id=692621269]
 custom_minimum_size = Vector2(256, 0)
 layout_mode = 2
 texture = SubResource("Texture2DRD_skmxa")
