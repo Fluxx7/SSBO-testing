@@ -8,9 +8,9 @@ public partial class WaterController : Node {
 
 	enum SpectrumFunction {
 		Tessendorf,
-		TessendorfAB,
+		PiersonMoskowitz,
 		JONSWAP,
-		PiersonMoskowitz
+		TMA
 	}
 
 	enum DirectionalSpreadingFunction {
@@ -26,27 +26,19 @@ public partial class WaterController : Node {
 		set {
 			_tileLength = value;
 			RenderingServer.GlobalShaderParameterSet("tileLength", value);
-			RegenerateWaves();
+			if (fftHandler != null) {
+				GenerateSpectrum();
+				GenerateWaves(0.0f);
+			}
 		}
 	}
 	[Export] private SpectrumFunction spectrum = SpectrumFunction.JONSWAP;
 	[Export] private DirectionalSpreadingFunction spread = DirectionalSpreadingFunction.Tessendorf;
 	[Export] private float _depth = 1000.0f;
-	[ExportGroup("JONSWAP Parameters")] 
-	[Export] private float _windSpeedJonswap = 10.0f;
-	[Export] private float _windDirectionJonswap;
+	[Export] private float _windSpeed = 10.0f;
+	[Export] private float _windDirection;
 	[Export] private float _fetch = 10000.0f;
-	
-	
-	[ExportGroup("Philips Parameters")] 
-	[Export] private float _windSpeedPhillips = 10.0f;
-	[Export] private float _windDirectionPhilips;
-	[Export] private float _philipsAmplitude = 0.000003f;
-	
-	[ExportGroup("Pierson Moskowitz Parameters")] 
-	[Export] private float _windSpeedPierMosk = 10.0f;
-	[Export] private float _windDirectionPierMosk;
-
+	[Export] private float _philipsAmplitude = 0.0008f;
 	[ExportGroup("")]
 	
 
@@ -60,9 +52,10 @@ public partial class WaterController : Node {
 	private ComputeShader jonswapGen = new("res://assets/Shaders/Compute/GLSL/Spectrums/jonswap_gen.glsl");
 	private ComputeShader tessendorfGen = new("res://assets/Shaders/Compute/GLSL/Spectrums/tessendorf_spectrum_gen.glsl");
 	private ComputeShader abSpectrumGen = new("res://assets/Shaders/Compute/GLSL/Spectrums/a_b_spectrum_gen.glsl");
+	private ComputeShader tmaSpectrumGen = new("res://assets/Shaders/Compute/GLSL/Spectrums/tma_spectrum_gen.glsl");
 	private ComputeShader tessendorfSpreading = new("res://assets/Shaders/Compute/GLSL/Spreadings/tessendorf_spreading.glsl");
 	private ComputeShader noSpreading = new("res://assets/Shaders/Compute/GLSL/Spreadings/no_spreading.glsl");
-	[Export] private TessendorfFFTHandler fftHandler;
+	private TessendorfFFTHandler fftHandler;
 	private float _currentSeed;
 	private float _time;
 
@@ -93,8 +86,58 @@ public partial class WaterController : Node {
 
 	public void UpdateProperty(Variant value, StringName property) {
 		switch (property) {
+			case "Depth":
+				_depth = value.AsSingle();
+				GenerateSpectrum();
+				GenerateWaves(0.0f);
+				break;
+			case "Fetch":
+				_fetch = value.AsSingle();
+				GenerateSpectrum();
+				GenerateWaves(0.0f);
+				break;
+			case "WindSpeed":
+				_windSpeed = value.AsSingle();
+				GenerateSpectrum();
+				GenerateWaves(0.0f);
+				break;
+			case "WindDirection":
+				_windDirection = value.AsSingle();
+				GenerateSpectrum();
+				GenerateWaves(0.0f);
+				break;
 			case "TileLength":
 				TileLength = value.AsSingle();
+				break;
+			case "Spectrum":
+				switch (value.AsInt32()) {
+					case 0:
+						spectrum = SpectrumFunction.Tessendorf;
+						break;
+					case 1:
+						spectrum = SpectrumFunction.PiersonMoskowitz;
+						break;
+					case 2:
+						spectrum = SpectrumFunction.JONSWAP;
+						break;
+					case 3:
+						spectrum = SpectrumFunction.TMA;
+						break;
+				}
+				GenerateSpectrum();
+				GenerateWaves(0.0f);
+				break;
+			case "Spread":
+				switch (value.AsInt32()) {
+					case 0:
+						spread = DirectionalSpreadingFunction.None;
+						break;
+					case 1:
+						spread = DirectionalSpreadingFunction.Tessendorf;
+						break;
+				}
+				GenerateSpectrum();
+				GenerateWaves(0.0f);
 				break;
 		}
 	}
@@ -123,6 +166,7 @@ public partial class WaterController : Node {
 	}
 
 	private void RegenerateWaves() {
+		GenerateGaussian();
 		GenerateSpectrum();
 		GenerateWaves(0.0f);
 	}
@@ -174,7 +218,7 @@ public partial class WaterController : Node {
 		shaderUniforms.Add("displacementMap", displacement_tex_id);
 		shaderUniforms.Add("gradientMap", gradient_tex_id);
 		shaderUniforms.Add("foamMap", foam_tex_id);
-		
+		GenerateGaussian();
 		InitSpectrums();
 		InitSpreads();
 		fftHandler = new TessendorfFFTHandler(_texSize, base_spectrum_tex_id, spectrum_tex_id, displacement_tex_id, gradient_tex_id, foam_tex_id, normal_tex_id);
@@ -186,6 +230,8 @@ public partial class WaterController : Node {
 		abSpectrumGen.AssignUniform(shaderUniforms["baseSpectrumTexture"], 0, 0);
 		
 		jonswapGen.AssignUniform(shaderUniforms["baseSpectrumTexture"], 0, 0);
+		
+		tmaSpectrumGen.AssignUniform(shaderUniforms["baseSpectrumTexture"], 0, 0);
 	}
 
 	private void InitSpreads() {
@@ -197,33 +243,37 @@ public partial class WaterController : Node {
 	}
 
 	private void DispatchTessendorf() {
-		tessendorfGen.Dispatch( _texSize / 16, _texSize / 16, 1, new ByteBuffer(_texSize).Add([_windSpeedPhillips, _philipsAmplitude, _tileLength]));
+		tessendorfGen.Dispatch( _texSize / 16, _texSize / 16, 1, new ByteBuffer(_texSize).Add([_windSpeed, _philipsAmplitude, _tileLength]));
 	}
 	
 	private void DispatchABSpectrum(float a, float b) {
-		abSpectrumGen.Dispatch( _texSize / 16, _texSize / 16, 1, new ByteBuffer(_texSize).Add([_tileLength, a, b]));
+		abSpectrumGen.Dispatch( _texSize / 16, _texSize / 16, 1, new ByteBuffer(_texSize).Add([_tileLength, a, b, _depth]));
 	}
 	
 	private void DispatchJonswap() {
-		jonswapGen.Dispatch( _texSize / 16, _texSize / 16, 1, new ByteBuffer(_texSize).Add([_windSpeedJonswap, _fetch, _tileLength]));
+		jonswapGen.Dispatch( _texSize / 16, _texSize / 16, 1, new ByteBuffer(_texSize).Add([_windSpeed, _fetch, _depth, _tileLength]));
 	}
 	
-	private void DispatchNoSpread(float windDirX, float windDirY) {
+	private void DispatchTMA() {
+		tmaSpectrumGen.Dispatch( _texSize / 16, _texSize / 16, 1, new ByteBuffer(_texSize).Add([_windSpeed, _fetch, _depth, _tileLength]));
+	}
+	
+	private void DispatchNoSpread() {
 		noSpreading.Dispatch( _texSize / 16, _texSize / 16, 1, 
-			new ByteBuffer(_texSize).Add([_tileLength, windDirX, windDirY]));
+			new ByteBuffer(_texSize).Add([_tileLength, float.DegreesToRadians(_windDirection)]));
 	}
 	
-	private void DispatchTessendorfSpread(float windDirX, float windDirY) {
+	private void DispatchTessendorfSpread() {
 		tessendorfSpreading.Dispatch( _texSize / 16, _texSize / 16, 1, 
-			new ByteBuffer(_texSize).Add([_tileLength, windDirX, windDirY]));
+			new ByteBuffer(_texSize).Add([_tileLength, float.DegreesToRadians(_windDirection)]));
 	}
 	
 	private void GenerateWaves(float delta) {
 		
 		fftHandler.Run(delta, _time, _tileLength, _depth);
 	}
-	
-	private void GenerateSpectrum() {
+
+	private void GenerateGaussian() {
 		var rng = new RandomNumberGenerator();
 		Image gaussian = Image.CreateEmpty((int)_texSize, (int)_texSize, false, Image.Format.Rgbaf);
 		for (int u = 0; u < _texSize; u++) {
@@ -237,41 +287,32 @@ public partial class WaterController : Node {
 		}
 
 		ComputeShader.SetInternalTexture(shaderUniforms["gaussian_noise"], _texSize, _texSize, gaussian);
-		float windDir = 0;
-		var a = 0f;
-		var b = 0f;
+	}
+
+	private void GenerateSpectrum() {
 		switch (spectrum) {
 			case SpectrumFunction.JONSWAP:
-				windDir = float.DegreesToRadians(_windDirectionJonswap);
 				DispatchJonswap();
 				break;
 			case SpectrumFunction.Tessendorf:
-				windDir = float.DegreesToRadians(_windDirectionPhilips);
 				DispatchTessendorf();
 				break;
-			case SpectrumFunction.TessendorfAB:
-				windDir = float.DegreesToRadians(_windDirectionPhilips);
-				a = 2.0f * _philipsAmplitude * g * g;
-				b = float.Pow(g / _windSpeedPierMosk, 4.0f);
+			case SpectrumFunction.PiersonMoskowitz:
+				float a = 8.1e-3f * g * g;
+				float b = 0.6858f * float.Pow(g / _windSpeed, 4.0f);
 				DispatchABSpectrum(a, b);
 				break;
-			case SpectrumFunction.PiersonMoskowitz:
-				windDir = float.DegreesToRadians(_windDirectionPierMosk);
-				a = 8.1e-3f * g * g;
-				b = 0.6858f * float.Pow(g / _windSpeedPierMosk, 4.0f);
-				DispatchABSpectrum(a, b);
+			case SpectrumFunction.TMA:
+				DispatchTMA();
 				break;
 		}
 		
-		float windDirX = float.Cos(windDir);
-		float windDirY = float.Sin(windDir);
-		
 		switch (spread) {
 			case DirectionalSpreadingFunction.None:
-				DispatchNoSpread(windDirX, windDirY);
+				DispatchNoSpread();
 				break;
 			case DirectionalSpreadingFunction.Tessendorf:
-				DispatchTessendorfSpread(windDirX, windDirY);
+				DispatchTessendorfSpread();
 				break;
 		}
 		

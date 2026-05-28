@@ -37,19 +37,19 @@ fog_depth_end = 335.5
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_laryo"]
 render_priority = 0
 shader = ExtResource("4_x3a0b")
-shader_parameter/time = 60.80881
-shader_parameter/water_scatter_color = Color(0.073152326, 0.94343406, 1.7287056e-06, 1)
-shader_parameter/air_bubble_color = Color(0.023414358, 0, 0.6174224, 1)
+shader_parameter/time = 181.59714
+shader_parameter/water_scatter_color = Color(0.05283398, 0.77768683, 7.70092e-07, 1)
+shader_parameter/air_bubble_color = Color(0.026580075, 0.03770888, 0.28338134, 1)
 shader_parameter/water_color = Color(0.0033474397, 0.087967, 0.19630623, 1)
-shader_parameter/height_scale = 17.58999960682832
-shader_parameter/k2 = 10.55999976396288
+shader_parameter/height_scale = 5.20999988354608
+shader_parameter/k2 = 4.7999998927103995
 shader_parameter/k3 = 0.35
 shader_parameter/k4 = 2.15
 shader_parameter/air_bubble_density = 3.4
 shader_parameter/wave_count = 42
 shader_parameter/cutoff_dist = 1000.0
 shader_parameter/cutoff_strength = 0.0007
-shader_parameter/chopMod = 1.54
+shader_parameter/chopMod = 9.23
 shader_parameter/use_derivative_displacement = false
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_x3a0b"]
@@ -94,13 +94,13 @@ environment = SubResource("Environment_6kuhc")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55.294052, 0.30945587, -12.993621)
 mesh = SubResource("PlaneMesh_x3a0b")
 script = ExtResource("3_hgp32")
-Time = 60.80881
+Time = 181.59714
 SumOfSinesTextureMat = SubResource("ShaderMaterial_laryo")
 Size = Vector2(1000, 1000)
 Subdivide = 512
 BaseAmplitude = 3.0
 BaseFrequency = 0.06
 Gain = 1.2
-ChopModifier = 1.54
+ChopModifier = 9.23
 
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/Button" to="Water" method="RegenerateWaves"]

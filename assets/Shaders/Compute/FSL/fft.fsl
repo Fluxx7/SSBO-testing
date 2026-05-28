@@ -1,0 +1,105 @@
+#include "shared_resources.fsl"
+
+//#define USE_NORMALIZATION
+
+layout(std430) buffer restrict twiddleFactors {
+    vec2 twiddles[];
+};
+
+layout(std430) buffer fft_buffers {
+    vec4 fft_data[][2];
+};
+
+#define fft_index(x, y, b) fft_data[ x + y * N][ b ] 
+#define fft_vindex(v, b) fft_data[ v.x + v.y * N][ b ] 
+
+
+#define dest(index) fft_index( index , y_coord, curr_dest)
+#define source(index) fft_index( index , y_coord, curr_source)
+
+kernel[16, 1, 1] twiddleGen {
+	set 0 {
+		twiddleFactors[restrict]
+	}
+	
+	main(uint N) {
+		if (gl_GlobalInvocationID.x >= (N / 2)) return;
+		uint x = gl_GlobalInvocationID.x;
+		float theta = 2.0 * PI * float(x) / float(N);
+		twiddles[x] = vec2(cos(theta), sin(theta));
+	}
+}
+
+kernel[16, 16, 1] ifftStage {
+	set 0 {
+		twiddleFactors[restrict, readonly]
+	}
+	set 1 {
+		fft_buffers[restrict]
+	}
+	
+	main(uint N, uint stage, uint curr_source, uint curr_dest) {
+		uint x_coord = gl_GlobalInvocationID.x;
+		uint y_coord = gl_GlobalInvocationID.y;
+		if (x_coord >= N/2 || y_coord >= N) {
+			return;
+		}
+	
+		uint index_base = N >> (stage + 1);
+		uint group_size = 1 << stage;
+		uint group = x_coord & ~(group_size - 1);
+		uint group_index = x_coord & (group_size - 1);
+		
+		// compute the indices to read from
+		uint source_index_1 = x_coord;
+		uint source_index_2 = source_index_1 + N/2;
+	
+		// compute the indices to write to
+		uint dest_index_1 = x_coord + group; 
+		uint dest_index_2 = dest_index_1 + group_size;
+	
+		// calculate the twiddle factor index to read from and retrieve that value 
+		uint twiddle_index = (source_index_1 & (group_size - 1)) * index_base;
+		vec2 twiddle = twiddles[twiddle_index];
+	
+		vec2 twiddled_x = vec2(0);
+		vec2 twiddled_y = vec2(0);
+		vec2 even_x = vec2(0);
+		vec2 even_y = vec2(0);
+	
+	
+		// load and twiddle the "odd" value, and load the "even" value
+		twiddled_x = complex_mult(twiddle, source(source_index_2).xy);
+		even_x = source(source_index_1).xy;
+		twiddled_y = complex_mult(twiddle, source(source_index_2).zw);
+		even_y = source(source_index_1).zw;
+		
+	
+		// calculate the output values and write them to the determined indices
+	#ifdef USE_NORMALIZATION
+		dest(dest_index_2) = vec4(complex_mult(even_x - twiddled_x, 0.5), complex_mult(even_y - twiddled_y, 0.5));
+		dest(dest_index_1) = vec4(complex_mult(even_x + twiddled_x, 0.5), complex_mult(even_y + twiddled_y, 0.5));
+	#else
+		dest(dest_index_2) = vec4(even_x - twiddled_x, even_y - twiddled_y);
+		dest(dest_index_1) = vec4(even_x + twiddled_x, even_y + twiddled_y);
+	#endif
+	}
+}
+
+kernel[16, 16, 1] ifftTranspose {
+	set 0 {
+		fft_buffers[restrict]
+	}
+	
+	main(uint N, uint curr_source, uint curr_dest) {
+		uint x_coord = gl_GlobalInvocationID.x;
+		uint y_coord = gl_GlobalInvocationID.y;
+		if (x_coord >= N || y_coord >= N) {
+			return;
+		}
+	
+		fft_index(y_coord, x_coord, curr_dest) = fft_index(x_coord, y_coord, curr_source);
+	}
+}
+
+

@@ -12,7 +12,7 @@ global uniform float tileLength;
 global uniform uint renderFlags;
 
 uniform float cutoff_dist : hint_range(0.0, 8000.0, 10.0) = 1000.0;
-uniform float cutoff_strength : hint_range(0.0, 0.005, 0.0001) = 0.0007;
+uniform float cutoff_strength : hint_range(0.0, 0.005, 0.0001) = 0.003;
 
 varying float dist_factor;
 varying vec2 coords;
@@ -20,7 +20,7 @@ void vertex() {
 	coords = VERTEX.xz / tileLength;
 	dist_factor = clamp(exp(-(length(VERTEX.xz - CAMERA_POSITION_WORLD.xz) - cutoff_dist)*cutoff_strength), 0.05, 1.0);
 	vec3 vertex_displacement = texture(displacementMap, coords).xyz;
-	VERTEX += vertex_displacement * dist_factor;// * vec3(1.0, dist_factor, 1.0);
+	VERTEX += vertex_displacement * vec3(1.0, dist_factor, 1.0);
 }
 
 varying vec2 v_derivatives;
@@ -48,10 +48,10 @@ void fragment() {
 		default:
 			SPECULAR = specular;
 			ALBEDO = mix(air_bubble_color.rgb, vec3(1.0), foam_factor);
-			NORMAL = (VIEW_MATRIX * vec4(local_normal,0.0)).xyz;
+			NORMAL = mix((VIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz, (VIEW_MATRIX * vec4(local_normal,0.0)).xyz, dist_factor);
 			break;
 		case 1: // Displacement
-			ALBEDO = texture(displacementMap, coords).rgb * exp(-dist*0.00075) / 15.0;
+			ALBEDO = texture(displacementMap, coords).rgb * exp(-dist*0.00075) / 5.0;
 			ROUGHNESS = 1.0;
 			SPECULAR = 0.0;
 			break;

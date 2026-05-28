@@ -16,9 +16,12 @@ layout(push_constant) restrict readonly uniform PushConstants {
     float windDirection;
 };
 
-float directional_spreading(vec2 k_vec) {
+float donelan_banner_spread(vec2 k_vec) {
     float wave_direction = atan(k_vec.y, k_vec.x);
     float theta = wave_direction - windDirection;
+    float epsilon = 
+    float beta_s = 1.0;
+    
     if (abs(theta) > (PI / 2.0)) {
         return 0.0;
     }
@@ -34,6 +37,6 @@ void main() {
     vec2 coeffs = imageLoad(spectrumCoefficients, id).rg;
     vec2 k_vec = 2.0 * PI * (id - texSize * 0.5) / tile_length;
     float direction_spectrum = base_sample * directional_spreading(k_vec);
-    float output_coeff = sqrt(direction_spectrum) * (2.0 * PI / tile_length) / sqrt(2.0);
+    float output_coeff = sqrt(direction_spectrum) / sqrt(2.0);
     imageStore(baseSpectrum, id, vec4(output_coeff * coeffs.x, output_coeff * coeffs.y, 0.0, 1.0));
 }

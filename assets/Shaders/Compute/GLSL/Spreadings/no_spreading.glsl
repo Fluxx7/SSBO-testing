@@ -13,7 +13,7 @@ layout(rgba32f, set = 0, binding = 1) restrict readonly uniform image2D spectrum
 layout(push_constant) restrict readonly uniform PushConstants {
     int texSize;
     float tile_length;
-    vec2 windDirection;
+    float windDirection;
 };
 
 void main() {
@@ -24,7 +24,7 @@ void main() {
     float base_sample = imageLoad(baseSpectrum, id).r;
     vec2 coeffs = imageLoad(spectrumCoefficients, id).rg;
     vec2 k_vec = 2.0 * PI * (id - texSize * 0.5) / tile_length;
-    float direction_spectrum = base_sample;
-    float output_coeff = sqrt(direction_spectrum) / sqrt(2.0);
+    float direction_spectrum = base_sample / (2.0 * PI);
+    float output_coeff = sqrt(direction_spectrum) * (2.0 * PI / tile_length) / sqrt(2.0);
     imageStore(baseSpectrum, id, vec4(output_coeff * coeffs.x, output_coeff * coeffs.y, 0.0, 1.0));
 }

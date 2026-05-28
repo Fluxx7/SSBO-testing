@@ -1,0 +1,38 @@
+
+
+#define PI 3.1415926535897932384626433
+#define g 9.81
+#define water_surface_tension 0.074
+#define water_density 1000.0
+
+
+vec2 complex_mult(vec2 a, vec2 b) {
+    return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+vec2 complex_mult(float a, vec2 b) {
+    return vec2(a * b.x, a * b.y );
+}
+
+vec2 complex_mult(vec2 a, float b) {
+    return vec2(a.x * b, a.y * b );
+}
+
+vec2 complex_conj(vec2 num) {
+    num.y *= -1.0;
+    return num;
+}
+
+vec2 exp_j(float theta) {
+    return vec2(cos(theta), sin(theta));
+}
+
+
+layout(rgba32f) uniform image2D baseSpectrum;
+layout(rgba32f) uniform image2D spectrumTexture;
+
+
+float dispersion_relation(float k_mag, float depth, out float tan_k) {
+    tan_k = tanh(k_mag * depth + pow(k_mag, 3.0) * water_surface_tension / water_density);
+    return sqrt(g * k_mag * tan_k);
+}

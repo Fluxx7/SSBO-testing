@@ -17,9 +17,12 @@
 [sub_resource type="Texture2DRD" id="Texture2DRD_2ot2b"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_g538k"]
-sky_top_color = Color(6.545782e-06, 0.52119046, 0.8231743, 1)
-sky_horizon_color = Color(0.9999997, 0.9987791, 0.8728872, 1)
-sky_curve = 0.016322862
+sky_top_color = Color(0, 0.22864681, 0.46740246, 1)
+sky_horizon_color = Color(0, 0.4144978, 0.70805776, 1)
+sky_curve = 0.3693434
+ground_bottom_color = Color(1.4439226e-07, 0.34898525, 0.60142386, 1)
+ground_horizon_color = Color(0, 0.41568628, 0.70980394, 1)
+ground_curve = 0.39396572
 sun_angle_max = 26.25
 sun_curve = 0.08615249
 
@@ -61,6 +64,33 @@ subdivide_width = 512
 subdivide_depth = 512
 
 [node name="Node3D" type="Node3D" unique_id=1407384273]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1072325012]
+follow_viewport_enabled = true
+
+[node name="Label" type="Label" parent="CanvasLayer" unique_id=1514944432]
+z_index = 20
+offset_left = 1.0
+offset_top = -1.0
+offset_right = 367.0
+offset_bottom = 28.0
+script = ExtResource("1_fa8pb")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer" unique_id=771151890]
+offset_left = 1708.0
+offset_top = 1.0
+offset_right = 1916.0
+offset_bottom = 240.0
+
+[node name="Debug View" type="Button" parent="CanvasLayer/VBoxContainer" unique_id=1942487460]
+layout_mode = 2
+toggle_mode = true
+text = "Debug View"
+
+[node name="Water Controls" type="Button" parent="CanvasLayer/VBoxContainer" unique_id=2101760572]
+layout_mode = 2
+toggle_mode = true
+text = "Water Controls"
 
 [node name="Debug" type="Window" parent="." unique_id=252567068]
 oversampling_override = 1.0
@@ -218,81 +248,176 @@ script = ExtResource("2_21h3a")
 offset_right = 776.0
 offset_bottom = 608.0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer" unique_id=276841467]
+[node name="Parameters" type="TabContainer" parent="Water Controls/CanvasLayer/VBoxContainer" unique_id=1954566442]
+layout_mode = 2
+current_tab = 1
+
+[node name="Visual Parameters" type="VBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters" unique_id=813306529]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 0
+metadata/_tab_name = "Visual Parameters"
+
+[node name="Water Color" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters" unique_id=1238541495]
 layout_mode = 2
 
-[node name="Parameter Controls" type="VBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer" unique_id=309372892]
-auto_translate_mode = 1
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls" unique_id=1860146425]
-layout_mode = 2
-text = "Water Parameters"
-
-[node name="Water Color" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls" unique_id=1238541495]
-layout_mode = 2
-
-[node name="Water Color" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Water Color" unique_id=1335056602]
+[node name="Water Color" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Water Color" unique_id=1335056602]
 layout_mode = 2
 text = "Water Color:"
 
-[node name="WC Selector" type="ColorPickerButton" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Water Color" unique_id=520982082]
+[node name="WC Selector" type="ColorPickerButton" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Water Color" unique_id=520982082]
 layout_mode = 2
 text = "Water Color"
 color = Color(0, 0.08235294, 0.28235295, 1)
 edit_alpha = false
 
-[node name="Reset" type="Button" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Water Color" unique_id=1988093949]
+[node name="Reset" type="Button" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Water Color" unique_id=1988093949]
 layout_mode = 2
 text = "Reset"
 
-[node name="Air Bubble Color" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls" unique_id=1050032303]
+[node name="Air Bubble Color" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters" unique_id=1050032303]
 layout_mode = 2
 
-[node name="Air Bubble Color" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Air Bubble Color" unique_id=1036887868]
+[node name="Air Bubble Color" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Air Bubble Color" unique_id=1036887868]
 layout_mode = 2
 text = "Air Bubble Color:"
 
-[node name="ABC Selector" type="ColorPickerButton" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Air Bubble Color" unique_id=1741949120]
+[node name="ABC Selector" type="ColorPickerButton" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Air Bubble Color" unique_id=1741949120]
 layout_mode = 2
 text = "Air Bubble Color"
 color = Color(0.050980393, 0.105882354, 0.16470589, 1)
 edit_alpha = false
 
-[node name="Reset" type="Button" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Air Bubble Color" unique_id=529879580]
+[node name="Reset" type="Button" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Air Bubble Color" unique_id=529879580]
 layout_mode = 2
 text = "Reset"
 
-[node name="Scatter Color" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls" unique_id=4897336]
+[node name="Scatter Color" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters" unique_id=4897336]
 layout_mode = 2
 
-[node name="Scatter Color" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Scatter Color" unique_id=998579274]
+[node name="Scatter Color" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Scatter Color" unique_id=998579274]
 layout_mode = 2
 text = "Scatter Color:"
 
-[node name="SC Selector" type="ColorPickerButton" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Scatter Color" unique_id=1616650187]
+[node name="SC Selector" type="ColorPickerButton" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Scatter Color" unique_id=1616650187]
 layout_mode = 2
 text = "Water Color"
 color = Color(0, 0.72156864, 0.16470589, 1)
 edit_alpha = false
 
-[node name="Reset" type="Button" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Scatter Color" unique_id=1630369246]
+[node name="Reset" type="Button" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Scatter Color" unique_id=1630369246]
 layout_mode = 2
 text = "Reset"
 
-[node name="Tile Length" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls" unique_id=1100078091]
+[node name="Generation Parameters" type="VBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters" unique_id=1474198944]
+layout_mode = 2
+metadata/_tab_index = 1
+metadata/_tab_name = "Generation Parameters"
+
+[node name="Tile Length" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters" unique_id=1100078091]
 layout_mode = 2
 
-[node name="Tile Length" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Tile Length" unique_id=578110251]
+[node name="Tile Length" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Tile Length" unique_id=578110251]
 layout_mode = 2
 text = "Tile Length:"
 
-[node name="SC Selector" type="SpinBox" parent="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Tile Length" unique_id=576815191]
+[node name="SC Selector" type="SpinBox" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Tile Length" unique_id=576815191]
 layout_mode = 2
-min_value = 0.1
-max_value = 1000.0
+min_value = 1.0
+max_value = 2048.0
+value = 250.0
+
+[node name="Wind Speed" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters" unique_id=235221424]
+layout_mode = 2
+
+[node name="Wind Speed" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Wind Speed" unique_id=1030358678]
+layout_mode = 2
+text = "Wind Speed:"
+
+[node name="SC Selector" type="SpinBox" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Wind Speed" unique_id=1331086135]
+layout_mode = 2
+max_value = 100000.0
 step = 0.1
-value = 256.0
+value = 5.0
+
+[node name="Wind Direction" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters" unique_id=117676385]
+layout_mode = 2
+
+[node name="Wind Direction" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Wind Direction" unique_id=1789202890]
+layout_mode = 2
+text = "Wind Direction:"
+
+[node name="SC Selector" type="SpinBox" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Wind Direction" unique_id=1957832126]
+layout_mode = 2
+min_value = -180.0
+max_value = 180.0
+step = 5.0
+
+[node name="Depth" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters" unique_id=592488332]
+layout_mode = 2
+
+[node name="Depth" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Depth" unique_id=1455479679]
+layout_mode = 2
+text = "Depth:"
+
+[node name="SC Selector" type="SpinBox" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Depth" unique_id=754844594]
+layout_mode = 2
+min_value = 5.0
+max_value = 100000.0
+step = 5.0
+value = 100.0
+
+[node name="Fetch" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters" unique_id=797274676]
+layout_mode = 2
+
+[node name="Fetch" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Fetch" unique_id=1798080511]
+layout_mode = 2
+text = "Fetch:"
+
+[node name="SC Selector" type="SpinBox" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Fetch" unique_id=1847698584]
+layout_mode = 2
+min_value = 100.0
+max_value = 1000000.0
+step = 100.0
+value = 150000.0
+
+[node name="Spectrum Function" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters" unique_id=731745330]
+auto_translate_mode = 1
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Spectrum Function" unique_id=772735281]
+layout_mode = 2
+text = "Spectrum Function:"
+
+[node name="OptionButton" type="OptionButton" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Spectrum Function" unique_id=1394239400]
+layout_mode = 2
+selected = 3
+item_count = 4
+popup/item_0/text = "Tessendorf"
+popup/item_0/id = 0
+popup/item_1/text = "Pierson-Moskowitz"
+popup/item_1/id = 1
+popup/item_2/text = "JONSWAP"
+popup/item_2/id = 2
+popup/item_3/text = "TMA"
+popup/item_3/id = 3
+
+[node name="Spreading Function" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters" unique_id=2012469849]
+auto_translate_mode = 1
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Spreading Function" unique_id=1864827769]
+layout_mode = 2
+text = "Spreading Function:"
+
+[node name="OptionButton" type="OptionButton" parent="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Spreading Function" unique_id=68981796]
+layout_mode = 2
+selected = 0
+item_count = 2
+popup/item_0/text = "None"
+popup/item_0/id = 0
+popup/item_1/text = "Positive Cosine Squared"
+popup/item_1/id = 1
 
 [node name="Lighting Controls" type="HBoxContainer" parent="Water Controls/CanvasLayer/VBoxContainer" unique_id=1103879275]
 auto_translate_mode = 1
@@ -345,7 +470,7 @@ text = "Simulate
 "
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=322091660]
-transform = Transform3D(-0.9238795, 0.091282815, -0.37163705, 0, 0.9711343, 0.23853347, 0.3826835, 0.22037618, -0.8972111, -50, 30, -100)
+transform = Transform3D(-0.9238795, 0.091282815, -0.37163705, 0, 0.9711343, 0.23853347, 0.3826835, 0.22037618, -0.8972111, -50, 11.53, -100)
 current = true
 script = ExtResource("2_ybqns")
 
@@ -359,7 +484,7 @@ transform = Transform3D(-0.9993919, 0.013411786, 0.03221955, -8.070968e-08, -0.9
 mesh = SubResource("PlaneMesh_21h3a")
 script = ExtResource("2_2leci")
 Subdivide = Vector2i(1024, 1024)
-Size = Vector2(5000, 5000)
+Size = Vector2(2000, 2000)
 Camera = NodePath("../Camera3D")
 ScatterColor = Color(0, 0.77254903, 0.39215687, 1)
 BubbleColor = Color(0.0454373, 0.10008203, 0.18974608, 1)
@@ -373,66 +498,46 @@ waterController = NodePath("WaterController1")
 
 [node name="WaterController1" type="Node" parent="Water" unique_id=189197707 node_paths=PackedStringArray("spectrumTexRect", "displaceTexRect", "gradientTexRect", "foamTexRect", "initialSpectrumTexRect", "normalTexRect")]
 script = ExtResource("4_addil")
-spectrum = 0
+TileLength = 250.0
+spectrum = 3
 spread = 0
 _depth = 100.0
-_windSpeedPhillips = 25.0
-_philipsAmplitude = 1.0
-_windSpeedPierMosk = 25.0
+_windSpeed = 5.0
+_fetch = 150000.0
+_philipsAmplitude = 0.02
 spectrumTexRect = NodePath("../../Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Current Spectrum/Spectrum")
 displaceTexRect = NodePath("../../Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Displacement/Displacement")
 gradientTexRect = NodePath("../../Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Gradients/Gradients")
 foamTexRect = NodePath("../../Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Foam/Foam")
 initialSpectrumTexRect = NodePath("../../Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Initial Spectrum/SpectrumZero")
 normalTexRect = NodePath("../../Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Normals/Normals")
-texPower = 9
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1072325012]
-follow_viewport_enabled = true
-
-[node name="Label" type="Label" parent="CanvasLayer" unique_id=1514944432]
-offset_left = 1.0
-offset_top = -1.0
-offset_right = 367.0
-offset_bottom = 28.0
-script = ExtResource("1_fa8pb")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer" unique_id=771151890]
-offset_left = 1708.0
-offset_top = 1.0
-offset_right = 1916.0
-offset_bottom = 240.0
-
-[node name="Debug View" type="Button" parent="CanvasLayer/VBoxContainer" unique_id=1942487460]
-layout_mode = 2
-toggle_mode = true
-text = "Debug View"
-
-[node name="Water Controls" type="Button" parent="CanvasLayer/VBoxContainer" unique_id=2101760572]
-layout_mode = 2
-toggle_mode = true
-text = "Water Controls"
-
+[connection signal="toggled" from="CanvasLayer/VBoxContainer/Debug View" to="Debug" method="set_visible"]
+[connection signal="toggled" from="CanvasLayer/VBoxContainer/Water Controls" to="Water Controls" method="set_visible"]
 [connection signal="close_requested" from="Debug" to="Debug" method="hide"]
 [connection signal="close_requested" from="Debug" to="CanvasLayer/VBoxContainer/Debug View" method="set_pressed" binds= [false]]
 [connection signal="item_selected" from="Debug/CanvasLayer/VBoxContainer/Button Container/OptionButton" to="Debug" method="DebugRenderControl"]
 [connection signal="close_requested" from="Water Controls" to="Water Controls" method="hide"]
 [connection signal="close_requested" from="Water Controls" to="CanvasLayer/VBoxContainer/Water Controls" method="set_pressed" binds= [false]]
-[connection signal="color_changed" from="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Water Color/WC Selector" to="Water" method="UpdateProperty" binds= [&"WaterColor"]]
-[connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Water Color/Reset" to="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Water Color/WC Selector" method="set_pick_color" binds= [Color(0, 0.08235294, 0.28235295, 1)]]
-[connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Water Color/Reset" to="Water" method="UpdateProperty" binds= [Color(0, 0.08235294, 0.28235295, 1), &"WaterColor"]]
-[connection signal="color_changed" from="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Air Bubble Color/ABC Selector" to="Water" method="UpdateProperty" binds= [&"BubbleColor"]]
-[connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Air Bubble Color/Reset" to="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Air Bubble Color/ABC Selector" method="set_pick_color" binds= [Color(0.050980393, 0.105882354, 0.16470589, 1)]]
-[connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Air Bubble Color/Reset" to="Water" method="UpdateProperty" binds= [Color(0.050980393, 0.105882354, 0.16470589, 1), &"BubbleColor"]]
-[connection signal="color_changed" from="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Scatter Color/SC Selector" to="Water" method="UpdateProperty" binds= [&"ScatterColor"]]
-[connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Scatter Color/Reset" to="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Scatter Color/SC Selector" method="set_pick_color" binds= [Color(0, 0.72156864, 0.16470589, 1)]]
-[connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Scatter Color/Reset" to="Water" method="UpdateProperty" binds= [Color(0, 0.72156864, 0.16470589, 1), &"ScatterColor"]]
-[connection signal="value_changed" from="Water Controls/CanvasLayer/VBoxContainer/HBoxContainer/Parameter Controls/Tile Length/SC Selector" to="Water/WaterController1" method="UpdateProperty" binds= [&"TileLength"]]
+[connection signal="color_changed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Water Color/WC Selector" to="Water" method="UpdateProperty" binds= [&"WaterColor"]]
+[connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Water Color/Reset" to="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Water Color/WC Selector" method="set_pick_color" binds= [Color(0, 0.08235294, 0.28235295, 1)]]
+[connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Water Color/Reset" to="Water" method="UpdateProperty" binds= [Color(0, 0.08235294, 0.28235295, 1), &"WaterColor"]]
+[connection signal="color_changed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Air Bubble Color/ABC Selector" to="Water" method="UpdateProperty" binds= [&"BubbleColor"]]
+[connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Air Bubble Color/Reset" to="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Air Bubble Color/ABC Selector" method="set_pick_color" binds= [Color(0.050980393, 0.105882354, 0.16470589, 1)]]
+[connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Air Bubble Color/Reset" to="Water" method="UpdateProperty" binds= [Color(0.050980393, 0.105882354, 0.16470589, 1), &"BubbleColor"]]
+[connection signal="color_changed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Scatter Color/SC Selector" to="Water" method="UpdateProperty" binds= [&"ScatterColor"]]
+[connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Scatter Color/Reset" to="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Scatter Color/SC Selector" method="set_pick_color" binds= [Color(0, 0.72156864, 0.16470589, 1)]]
+[connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Visual Parameters/Scatter Color/Reset" to="Water" method="UpdateProperty" binds= [Color(0, 0.72156864, 0.16470589, 1), &"ScatterColor"]]
+[connection signal="value_changed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Tile Length/SC Selector" to="Water/WaterController1" method="UpdateProperty" binds= [&"TileLength"]]
+[connection signal="value_changed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Wind Speed/SC Selector" to="Water/WaterController1" method="UpdateProperty" binds= [&"WindSpeed"]]
+[connection signal="value_changed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Wind Direction/SC Selector" to="Water/WaterController1" method="UpdateProperty" binds= [&"WindDirection"]]
+[connection signal="value_changed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Depth/SC Selector" to="Water/WaterController1" method="UpdateProperty" binds= [&"Depth"]]
+[connection signal="value_changed" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Fetch/SC Selector" to="Water/WaterController1" method="UpdateProperty" binds= [&"Fetch"]]
+[connection signal="item_selected" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Spectrum Function/OptionButton" to="Water/WaterController1" method="UpdateProperty" binds= [&"Spectrum"]]
+[connection signal="item_selected" from="Water Controls/CanvasLayer/VBoxContainer/Parameters/Generation Parameters/Spreading Function/OptionButton" to="Water/WaterController1" method="UpdateProperty" binds= [&"Spread"]]
 [connection signal="toggled" from="Water Controls/CanvasLayer/VBoxContainer/Lighting Controls/Diffuse" to="Water Controls" method="SetFlag" binds= [1]]
 [connection signal="toggled" from="Water Controls/CanvasLayer/VBoxContainer/Lighting Controls/Specular" to="Water Controls" method="SetFlag" binds= [2]]
 [connection signal="toggled" from="Water Controls/CanvasLayer/VBoxContainer/Lighting Controls/Reflections" to="Water Controls" method="SetFlag" binds= [4]]
 [connection signal="toggled" from="Water Controls/CanvasLayer/VBoxContainer/Lighting Controls/Foam" to="Water Controls" method="SetFlag" binds= [8]]
 [connection signal="pressed" from="Water Controls/CanvasLayer/VBoxContainer/Simulation Controls/Regen Waves" to="Water/WaterController1" method="RegenerateWaves"]
 [connection signal="toggled" from="Water Controls/CanvasLayer/VBoxContainer/Simulation Controls/Simulate" to="Water/WaterController1" method="ToggleSimulate"]
-[connection signal="toggled" from="CanvasLayer/VBoxContainer/Debug View" to="Debug" method="set_visible"]
-[connection signal="toggled" from="CanvasLayer/VBoxContainer/Water Controls" to="Water Controls" method="set_visible"]

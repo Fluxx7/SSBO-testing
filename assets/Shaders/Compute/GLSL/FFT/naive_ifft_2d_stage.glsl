@@ -62,7 +62,7 @@ void main() {
     uint dest_index_2 = dest_index_1 + group_size;
 
     // calculate the twiddle factor index to read from and retrieve that value 
-    uint twiddle_index = (source_index_1 & (group_size - 1)) * index_base;
+    uint twiddle_index = group_index * index_base;
     vec2 twiddle = twiddles[twiddle_index];
 
     vec2 twiddled_x = vec2(0);

@@ -107,6 +107,12 @@ public partial class FFTHandler: RefCounted {
 			(currSource, currDest) = (currDest, currSource);
 		}
 		
+		ifftComputePlan.AddBarrier();
+		ifftComputePlan.AddShader(ifftTranspose, _N / 16, _N / 16, 1, 
+			new ByteBuffer().Add(_N).Add(currSource).Add(currDest));
+		
+		(currSource, currDest) = (currDest, currSource);
+		
 		outputBuffer = currSource;
 	}
 	

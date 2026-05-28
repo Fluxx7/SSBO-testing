@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://o285m8fu6ihp"
+path="res://.godot/imported/donelan_banner_spreading.glsl-4b8af828b59b90eccea328e1d28dc0c5.res"
+
+[deps]
+
+source_file="res://assets/Shaders/Compute/GLSL/Spreadings/donelan_banner_spreading.glsl"
+dest_files=["res://.godot/imported/donelan_banner_spreading.glsl-4b8af828b59b90eccea328e1d28dc0c5.res"]
+
+[params]
+

@@ -15,8 +15,8 @@ public partial class TessendorfFFTHandler: RefCounted {
 	private const uint vec4_size = 16;
 	
 	private const uint num_ffts = 2;
-	[Export] private float foam_amount = 2.0f;
-	[Export] private float whitecap = 0.1f;
+	[Export] private float foam_amount = 0.5f;
+	[Export] private float whitecap = 0.5f;
 	
 	private TessendorfFFTHandler() {
 		_N = 256;
@@ -89,7 +89,7 @@ public partial class TessendorfFFTHandler: RefCounted {
 		ByteBuffer timeBuffer = new ByteBuffer().Add(_N).Add([time, tile_length, depth]);
 		finalPlan.AddShader(updateSpectrum, _N / 16, _N / 16, 1, 
 			timeBuffer);
-		ByteBuffer unpackBuffer = new ByteBuffer(_N).Add([whitecap, foam_amount * delta * 7.5f, delta * float.Max(0.5f, 10f - foam_amount) * 0.15f]);
+		ByteBuffer unpackBuffer = new ByteBuffer(_N).Add([foam_amount * delta * 7.5f, delta * float.Max(0.5f, 10f - foam_amount) * 0.15f, whitecap]);
 		foreach (var (fft, _) in ffts) {
 			var (fftPlan, fftOutput) = fft.Bind();
 			finalPlan.AddPlan(fftPlan);

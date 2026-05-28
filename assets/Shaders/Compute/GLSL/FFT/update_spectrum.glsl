@@ -60,10 +60,16 @@ vec2 exp_j(float theta) {
     return vec2(cos(theta), sin(theta));
 }
 
+#define water_surface_tension 0.074
+#define water_density 1000.0
 
 float dispersion_relation(float k_mag) {
+    return sqrt(9.81 * k_mag * tanh(k_mag * depth + pow(k_mag, 3.0) * water_surface_tension / water_density));
+}
+
+float dispersion_relation_quant(float k_mag) {
     float omega_naught = 2.0 * PI / time_cycle;
-    float omega = sqrt(9.81 * k_mag * tanh(k_mag * depth));
+    float omega = dispersion_relation(k_mag);
     return floor(omega / omega_naught) * omega_naught;
 }
 
@@ -80,14 +86,14 @@ void main() {
     const vec2 f_kterm = (id - texSize * 0.5) * coeff;
     
     const vec2 Hnaught = imageLoad(baseSpectrum, id).xy;
-    const vec2 Hnaught_star = complex_conj(imageLoad(baseSpectrum, ivec2(texSize, texSize) - id).xy);
+    const vec2 Hnaught_star = complex_conj(imageLoad(baseSpectrum, (ivec2(texSize, texSize) - id) & (texSize - 1)).xy);
     const float k_mag = length(f_kterm);
 
-    const vec2 exp_dispersion = exp_j(time * dispersion_relation(k_mag));
+    const vec2 exp_dispersion = exp_j(time * dispersion_relation_quant(k_mag));
     vec2 H_tilde = complex_mult(Hnaught, exp_dispersion) + complex_mult(Hnaught_star, complex_conj(exp_dispersion));
     vec2 k_unit = vec2(0.0);
     if (k_mag > 1e-6) {
-        k_unit = -f_kterm / k_mag;
+        k_unit = f_kterm / k_mag;
     }
     // this image is only for debugging and should be removed for "production"
     imageStore(spectrumTexture, id, vec4(H_tilde, 0.0, 1.0));
@@ -99,14 +105,14 @@ void main() {
     // multiply one of the inputs by j so that its output will be imaginary, and add it to the other input.
     // The outputs can then be read from the real and imaginary parts of the resulting complex number  
     // This cuts the number of FFTs needed in half
-    const vec2 x_disp = -1.0 * k_unit.y * jH;
-    const vec2 z_disp = -1.0 * k_unit.x * jH;
+    const vec2 x_disp = k_unit.x * jH;
+    const vec2 z_disp = k_unit.y * jH;
 
-    const vec2 dy_dx = f_kterm.y * jH;
-    const vec2 dy_dz = f_kterm.x * jH;
-    const vec2 dx_dx = -H_tilde * f_kterm.y * k_unit.y;
+    const vec2 dy_dx = f_kterm.x * jH;
+    const vec2 dy_dz = f_kterm.y * jH;
+    const vec2 dx_dx = -H_tilde * f_kterm.x * k_unit.x;
     const vec2 dx_dz = -H_tilde * f_kterm.y * k_unit.x;
-    const vec2 dz_dz = -H_tilde * f_kterm.x * k_unit.x;
+    const vec2 dz_dz = -H_tilde * f_kterm.y * k_unit.y;
 
     const vec2 jz_disp = complex_mult(j, z_disp);
     const vec2 jdy_dz = complex_mult(j, dy_dz);

@@ -41,16 +41,18 @@ void main() {
     if (gl_GlobalInvocationID.y >= texSize) return;
     ivec2 id = ivec2(gl_GlobalInvocationID.xy);
     
+    const float lambda = 0.9f;
+    
     const float sign_shift = -2*((id.x & 1) ^ (id.y & 1)) + 1;
-    const float scale = 1.0f;
-    vec3 displacement = fft_vindex(id, curr_source_disp).xzw * scale;
-    vec2 gradients = fft_grad_vindex(id, curr_source_grad).xy * sign_shift * scale;
+    vec3 displacement = fft_vindex(id, curr_source_disp).zxw * vec3(lambda, 1.0, lambda);
+    vec2 gradients = fft_grad_vindex(id, curr_source_grad).xy * sign_shift;
+    gradients = clamp(gradients, vec2(-3.0), vec2(3.0));
     vec3 normal = normalize(vec3(-gradients.x, 1.0, -gradients.y));
     float dx_dz = fft_vindex(id, curr_source_disp).y * sign_shift;
     float dx_dx = fft_grad_vindex(id, curr_source_grad).z * sign_shift;
     float dz_dz = fft_grad_vindex(id, curr_source_grad).w * sign_shift;
 
-    gradients = gradients / (1.0 + abs(vec2(dx_dx, dz_dz)));
+    //gradients = gradients / (1.0 + abs(vec2(dx_dx, dz_dz)));
     
     imageStore(heightTexture, id, vec4(displacement * sign_shift, 1.0));
     imageStore(gradientTexture, id, vec4(gradients.x, 0.0, gradients.y, 1.0) );
@@ -58,7 +60,7 @@ void main() {
 
     
 
-    float jacobian = (dx_dx) * (dz_dz) - dx_dz * dx_dz;
+    float jacobian = (dx_dx + 1.0) * (dz_dz + 1.0) - dx_dz * dx_dz;
 
     float foam_factor = -min(0.0, jacobian - whitecap);
     float foam = imageLoad(foamTexture, id).x;

@@ -6,8 +6,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="assets\.DS_Store" />
-    <Content Include="assets\Shaders\Compute\GDShader\fft.gdshader" />
-    <Content Include="assets\Shaders\Compute\GDShader\wavegen_sin.gdshader" />
+    <Content Include="assets\Shaders\Compute\FSL\fft.fsl" />
+    <Content Include="assets\Shaders\Compute\FSL\shared_resources.fsl" />
+    <Content Include="assets\Shaders\Compute\FSL\spectrums.fsl" />
+    <Content Include="assets\Shaders\Compute\FSL\spreadings.fsl" />
+    <Content Include="assets\Shaders\Compute\FSL\tessendorf_funcs.fsl" />
     <Content Include="assets\Shaders\Compute\GLSL\FFT\ifft_2d_transpose.glsl" />
     <Content Include="assets\Shaders\Compute\GLSL\FFT\naive_ifft_2d_stage.glsl" />
     <Content Include="assets\Shaders\Compute\GLSL\FFT\prep_twiddle.glsl" />
@@ -16,12 +19,12 @@
     <Content Include="assets\Shaders\Compute\GLSL\map_gen.glsl" />
     <Content Include="assets\Shaders\Compute\GLSL\Spectrums\a_b_spectrum_gen.glsl" />
     <Content Include="assets\Shaders\Compute\GLSL\Spectrums\jonswap_gen.glsl" />
-    <Content Include="assets\Shaders\Compute\GLSL\Spectrums\philips_spectrum_gen.glsl" />
-    <Content Include="assets\Shaders\Compute\GLSL\Spectrums\pierson_moskowitz_gen.glsl" />
     <Content Include="assets\Shaders\Compute\GLSL\Spectrums\tessendorf_spectrum_gen.glsl" />
     <Content Include="assets\Shaders\Compute\GLSL\Spectrums\tma_spectrum_gen.glsl" />
     <Content Include="assets\Shaders\Compute\GLSL\sinwave_texgen.glsl" />
     <Content Include="assets\Shaders\Compute\GLSL\sinwave_texgen_adv.glsl" />
+    <Content Include="assets\Shaders\Compute\GLSL\Spreadings\donelan_banner_spreading.glsl" />
+    <Content Include="assets\Shaders\Compute\GLSL\Spreadings\mitsuyasu_spreading.glsl" />
     <Content Include="assets\Shaders\Compute\GLSL\Spreadings\no_spreading.glsl" />
     <Content Include="assets\Shaders\Compute\GLSL\Spreadings\tessendorf_spreading.glsl" />
     <Content Include="assets\tessmeshfinal.blend" />
@@ -30,16 +33,8 @@
     <Content Include="assets\Textures\Epic_BlueSunset_EquiRect_flat.png" />
     <Content Include="assets\Textures\Epic_BlueSunset_EquiRect_flat.png.import" />
     <Content Include="assets\water_mesh.res" />
-    <Content Include="Scenes\Utility Tests\DFT Testing\Compute\dft_1d.glsl" />
-    <Content Include="Scenes\Utility Tests\DFT Testing\Compute\dft_1d.glsl.import" />
-    <Content Include="Scenes\Utility Tests\DFT Testing\Compute\dft_2d.glsl" />
-    <Content Include="Scenes\Utility Tests\DFT Testing\Compute\dft_2d.glsl.import" />
-    <Content Include="Scenes\Utility Tests\DFT Testing\Compute\idft_1d.glsl" />
-    <Content Include="Scenes\Utility Tests\DFT Testing\Compute\idft_1d.glsl.import" />
-    <Content Include="Scenes\Utility Tests\DFT Testing\Compute\idft_2d.glsl" />
-    <Content Include="Scenes\Utility Tests\DFT Testing\Compute\idft_2d.glsl.import" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Custom\" />
+    <Folder Include="Scenes\" />
   </ItemGroup>
 </Project>
