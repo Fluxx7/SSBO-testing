@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace GraphicsTesting.assets.Scripts.Utility;
+namespace GodotWaterRendering.assets.Scripts.Utility;
 
 public partial class ControllableCamera : Camera3D {
 	[Export] public float Sensitivity = 3f;

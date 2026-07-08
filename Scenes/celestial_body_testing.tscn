@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://c83wh3sni6wrl"]
+
+[ext_resource type="Script" uid="uid://b14j8uj81cqh4" path="res://assets/Scripts/Utility/ControllableCamera.cs" id="1_1f4v1"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_irlwx"]
+noise_type = 3
+frequency = 0.0548
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_c4s6b"]
+width = 2048
+height = 2048
+noise = SubResource("FastNoiseLite_irlwx")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qmxgg"]
+albedo_color = Color(0.18431373, 1, 1, 1)
+albedo_texture = SubResource("NoiseTexture2D_c4s6b")
+roughness = 0.62
+
+[sub_resource type="SphereMesh" id="SphereMesh_qmxgg"]
+material = SubResource("StandardMaterial3D_qmxgg")
+radius = 4000.0
+height = 8000.0
+
+[sub_resource type="Environment" id="Environment_7rdt1"]
+background_mode = 1
+ambient_light_energy = 0.0
+
+[node name="CelestialBodyTesting" type="Node3D" unique_id=487021627]
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1831754564]
+transform = Transform3D(0.99965733, -0.0047703627, 0.025738612, 0, 0.98325497, 0.18223527, -0.026176946, -0.18217282, 0.982918, 108.12904, 735.7088, 4401.6357)
+fov = 96.9
+script = ExtResource("1_1f4v1")
+
+[node name="Test Planet" type="MeshInstance3D" parent="." unique_id=1571810023]
+mesh = SubResource("SphereMesh_qmxgg")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1856244438]
+environment = SubResource("Environment_7rdt1")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=686914757]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8000)
+light_color = Color(0.99391645, 1, 0.76890874, 1)
+light_energy = 15.471
+omni_range = 100000.0
+omni_attenuation = 0.412

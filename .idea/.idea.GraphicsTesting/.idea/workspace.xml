@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="295c8a49-58de-44da-a101-e708ea7b5527" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.GraphicsTesting/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.GraphicsTesting/.idea/.name" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.GraphicsTesting/.idea/encodings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.GraphicsTesting/.idea/indexLayout.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.GraphicsTesting/.idea/libraries/GdSdk_Master.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.GraphicsTesting/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/GraphicsTesting.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/GodotWaterRendering.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GraphicsTesting.sln" beforeDir="false" afterPath="$PROJECT_DIR$/GodotWaterRendering.sln" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/Scripts/2D/ComputeController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/assets/Scripts/2D/ComputeController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/Scripts/Utility/ComputeHandler.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/Scripts/Utility/ComputeHandler.cs.uid" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/Scripts/Utility/ControllableCamera.cs" beforeDir="false" afterPath="$PROJECT_DIR$/assets/Scripts/Utility/ControllableCamera.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/Scripts/Utility/FFTHandler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/assets/Scripts/Utility/FFTHandler.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/Scripts/Utility/TessendorfFFTHandler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/assets/Scripts/Utility/TessendorfFFTHandler.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/Scripts/Water/TextureWater.cs" beforeDir="false" afterPath="$PROJECT_DIR$/assets/Scripts/Water/TextureWater.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/Scripts/Water/Water.cs" beforeDir="false" afterPath="$PROJECT_DIR$/assets/Scripts/Water/Water.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/Scripts/Water/WaterController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/assets/Scripts/Water/WaterController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/Compute Shader Handling/ComputePlan.cs" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/Compute Shader Handling/ComputePlan.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/Compute Shader Handling/ComputeShader.cs" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/Compute Shader Handling/ComputeShader.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/BufferResource.cs" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/BufferResource.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/ByteBuffer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/ByteBuffer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/ShaderResource.cs" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/ShaderResource.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/TextureResource.cs" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/TextureResource.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/UniformResource.cs" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/UniformResource.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/Compute Shader Handling/ShaderResourceStorage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/Compute Shader Handling/ShaderResourceStorage.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/Compute Shader Handling/UniformSet.cs" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/Compute Shader Handling/UniformSet.cs" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DpaMonitoringSettings">
+    <option name="firstShow" value="false" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Spatial" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/../fractured-whole/Player/PlayerCharacter.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/assets/Scripts/Utility/FFTHandler.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/assets/Scripts/Utility/TessendorfFFTHandler.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/assets/Scripts/Water/TextureWater.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/assets/Scripts/Water/Water.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/assets/Scripts/Water/WaterController.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/assets/Shaders/Compute/GLSL/FFT/naive_ifft_2d_stage.glsl" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/assets/Shaders/Compute/GLSL/Spectrums/tma_spectrum_gen.glsl" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/assets/Shaders/Compute/GLSL/Spreadings/donelan_banner_spreading.glsl" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/assets/Shaders/Compute/GLSL/Spreadings/mitsuyasu_spreading.glsl" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/libraries/Compute Shader Handling/ComputePlan.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/libraries/Compute Shader Handling/ComputeShader.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/BufferResource.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/ShaderResource.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/libraries/Compute Shader Handling/Resources/TextureResource.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Callable.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Dictionary.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../godot/modules/mono/glue/GodotSharp/GodotSharp/Core/StringName.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Variant.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node3D.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/RenderingDevice.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/10aaa43d7a344e9fa393c04439abb080559c00/0f/20c4a19b/ShaderMaterial.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/1e44bad51517435d87307def9aef5b02559c00/1e/79f71188/Texture2Drd.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/1e44bad51517435d87307def9aef5b02559c00/8d/e9729253/RenderingDevice.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/3383ace59fb44c6abff6f3557912c507559c00/1b/df9b3ffe/ShaderMaterial.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/54d8724903e9464aac963ce831cee942b530/36/f28205d9/Dictionary`2.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/77643b5c63df4e24ac3b3762be7ee1b655c600/0f/dd9dc265/RenderingDevice.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/77643b5c63df4e24ac3b3762be7ee1b655c600/2a/806934c4/Dictionary`2.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/77643b5c63df4e24ac3b3762be7ee1b655c600/8a/5b77c3db/RefCounted.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/77643b5c63df4e24ac3b3762be7ee1b655c600/96/6ac4c20c/GD.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/77643b5c63df4e24ac3b3762be7ee1b655c600/a7/a888f0b3/RDUniform.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/8e06a376957d44ac91c293195c94ee335fc800/c6/edbb47b5/DelegateUtils.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/966e9c4c8cc44cce888f7837f20ca08e5e7800/d8/7a080307/Variant.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/c43b31c7d56141f89da1e318660d97f4559200/a8/87b4d10b/ShaderMaterial.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/1aa484da83c12ebfbf9537f6d56dfb5bfa4a1375a5a367a4691abe5cdc7de9d/RenderingDevice.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3f936b5327f98b8e70c91d487f5a3b6480cc7e3dd3a1996bc7542d3cab72d4b/RenderingServer.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/4743f513c7ddc8411223a46f0ca426ed929391acebcff993721dff2f0c6b34/ThrowHelper.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/5c20c8487489297f393c010d572a1fae933425086f84fe8a9c8629bf887a82b/ShaderMaterial.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/836aaa1e82d91453661d6536419242694f/WaterProj_ScriptMethods.generated.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/d9d8e0128e3a6e2dbfb409adeeb32e1963ab6d0/Godot.NativeInterop.NativeFuncs.generated.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/f11bb6e6fc61729b3adb23852439585d3ec88ab8613c1eab2f4e539486b2c/Buffer.cs" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="30vYMSqcqnwbc3OncprsOZO5C2J" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;.NET Executable.Editor.executor&quot;: &quot;Debug&quot;,
+    &quot;.NET Executable.Player.executor&quot;: &quot;Debug&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;XThreadsFramesViewSplitterKey&quot;: &quot;0.36873156&quot;,
+    &quot;gdscript.promo.shown&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;fft&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;settings.sync&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RunManager" selected=".NET Executable.Player">
+    <configuration name="Player GDScript" type="GDSCRIPT_DEBUG_RUN_CONFIGURATION" factoryName="GdScriptRunFactory" show_console_on_std_err="false" show_console_on_std_out="false" port="6006">
+      <option name="address" value="127.0.0.1" />
+      <option name="allowRunningInParallel" value="false" />
+      <option name="listenPortForConnections" value="false" />
+      <option name="projectPathOnTarget" />
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <method v="2" />
+    </configuration>
+    <configuration name="Editor" type="RunExe" factoryName=".NET Executable">
+      <option name="EXE_PATH" value="/Applications/Godot.app/Contents/MacOS/Godot" />
+      <option name="PROGRAM_PARAMETERS" value="--path &quot;./&quot; --editor" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="PASS_PARENT_ENVS" value="1" />
+      <option name="USE_EXTERNAL_CONSOLE" value="0" />
+      <option name="ENV_FILE_PATHS" value="" />
+      <option name="REDIRECT_INPUT_PATH" value="" />
+      <option name="PTY_MODE" value="Auto" />
+      <option name="USE_MONO" value="0" />
+      <option name="RUNTIME_ARGUMENTS" value="" />
+      <option name="AUTO_ATTACH_CHILDREN" value="0" />
+      <option name="MIXED_MODE_DEBUG" value="0" />
+      <option name="RUNTIME_TYPE" value="coreclr" />
+      <method v="2">
+        <option name="Build Solution" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Player" type="RunExe" factoryName=".NET Executable">
+      <option name="EXE_PATH" value="/Applications/Godot.app/Contents/MacOS/Godot" />
+      <option name="PROGRAM_PARAMETERS" value="--path &quot;./&quot;" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="PASS_PARENT_ENVS" value="1" />
+      <option name="USE_EXTERNAL_CONSOLE" value="0" />
+      <option name="ENV_FILE_PATHS" value="" />
+      <option name="REDIRECT_INPUT_PATH" value="" />
+      <option name="PTY_MODE" value="Auto" />
+      <option name="USE_MONO" value="0" />
+      <option name="RUNTIME_ARGUMENTS" value="" />
+      <option name="AUTO_ATTACH_CHILDREN" value="0" />
+      <option name="MIXED_MODE_DEBUG" value="0" />
+      <option name="RUNTIME_TYPE" value="coreclr" />
+      <method v="2">
+        <option name="Build Solution" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="295c8a49-58de-44da-a101-e708ea7b5527" name="Changes" comment="" />
+      <created>1754509466607</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1754509466607</updated>
+      <workItem from="1754509467871" duration="13383000" />
+      <workItem from="1754701249950" duration="1537000" />
+      <workItem from="1754777296428" duration="18000" />
+      <workItem from="1754965594900" duration="830000" />
+      <workItem from="1755375006455" duration="339000" />
+      <workItem from="1755828113322" duration="16715000" />
+      <workItem from="1755909592554" duration="3533000" />
+      <workItem from="1755913384501" duration="798000" />
+      <workItem from="1755914700862" duration="4054000" />
+      <workItem from="1755918807212" duration="10425000" />
+      <workItem from="1756100921446" duration="28836000" />
+      <workItem from="1756353662491" duration="15608000" />
+      <workItem from="1756445808636" duration="151000" />
+      <workItem from="1756445963714" duration="63576000" />
+      <workItem from="1756706366841" duration="29546000" />
+      <workItem from="1756931830421" duration="27820000" />
+      <workItem from="1757305907729" duration="30266000" />
+      <workItem from="1757440878486" duration="12046000" />
+      <workItem from="1757479328245" duration="12216000" />
+      <workItem from="1757570293119" duration="5827000" />
+      <workItem from="1757993927370" duration="13711000" />
+      <workItem from="1758047655389" duration="1587000" />
+      <workItem from="1758052958285" duration="1927000" />
+      <workItem from="1758054895099" duration="5953000" />
+      <workItem from="1758078648482" duration="3911000" />
+      <workItem from="1758082622141" duration="471000" />
+      <workItem from="1758143609821" duration="3114000" />
+      <workItem from="1758211692870" duration="4645000" />
+      <workItem from="1758692484298" duration="7179000" />
+      <workItem from="1758956302712" duration="3291000" />
+      <workItem from="1759695930314" duration="62381000" />
+      <workItem from="1760500495249" duration="31989000" />
+      <workItem from="1761625440450" duration="68365000" />
+      <workItem from="1765229568059" duration="6029000" />
+      <workItem from="1765580632678" duration="61193000" />
+      <workItem from="1768434504992" duration="12000" />
+      <workItem from="1768576703075" duration="3645000" />
+      <workItem from="1768922603550" duration="1940000" />
+      <workItem from="1769206880860" duration="380000" />
+      <workItem from="1769828193642" duration="1702000" />
+      <workItem from="1769983933996" duration="559000" />
+      <workItem from="1770131992594" duration="215000" />
+      <workItem from="1770306827815" duration="277000" />
+      <workItem from="1770533187814" duration="6366000" />
+      <workItem from="1770750263264" duration="2442000" />
+      <workItem from="1770753957354" duration="4236000" />
+      <workItem from="1771269991629" duration="180000" />
+      <workItem from="1771281716822" duration="1165000" />
+      <workItem from="1771603380880" duration="1367000" />
+      <workItem from="1771757328152" duration="5177000" />
+      <workItem from="1772214846782" duration="19061000" />
+      <workItem from="1778514709869" duration="7861000" />
+      <workItem from="1778550314296" duration="3525000" />
+      <workItem from="1778662723141" duration="68087000" />
+      <workItem from="1779227735222" duration="147655000" />
+      <workItem from="1780556806179" duration="200000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnityCheckinConfiguration" checkUnsavedScenes="true" />
+  <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.OperationCanceledException" breakIfHandledByOtherCode="false" displayValue="System.OperationCanceledException" />
+          <option name="timeStamp" value="1" />
+        </breakpoint>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.Threading.Tasks.TaskCanceledException" breakIfHandledByOtherCode="false" displayValue="System.Threading.Tasks.TaskCanceledException" />
+          <option name="timeStamp" value="2" />
+        </breakpoint>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.Threading.ThreadAbortException" breakIfHandledByOtherCode="false" displayValue="System.Threading.ThreadAbortException" />
+          <option name="timeStamp" value="3" />
+        </breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+    <pin-to-top-manager>
+      <pinned-members>
+        <PinnedItemInfo parentTag="Frame#GraphicsTesting.assets.Scripts.Utility.ComputeHandler.Dispatch" memberName="curr_arr" />
+      </pinned-members>
+    </pin-to-top-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

@@ -1,9 +1,9 @@
 using System;
+using FluxxiShaderLang;
 using Godot;
 using Godot.Collections;
 using Godot.NativeInterop;
-using GraphicsTesting.assets.Scripts.Utility;
-using GraphicsTesting.Libraries.ComputeShaderHandling;
+using GodotWaterRendering.assets.Scripts.Utility;
 using Wave = Godot.Collections.Dictionary<Godot.StringName, float>;
 [Tool]
 public partial class Water : MeshInstance3D {
@@ -42,6 +42,8 @@ public partial class Water : MeshInstance3D {
 	private float _prevSeed;
 
 	private Texture2Drd wave_tex;
+	// Kept alive so the native FSLTexture callback's delegate isn't GC'd (see WaterController).
+	private Callable _waveTexCallback;
 
 	[Export]
 	public float ChopModifier {
@@ -61,26 +63,33 @@ public partial class Water : MeshInstance3D {
 
 	
 	// compute shader stuff
-	private ComputeShader textureGen = new("res://assets/Shaders/Compute/GLSL/sinwave_texgen_adv.glsl");
+	private FSLFile sumOfSinesShader = FSLFile.FromFile("res://assets/Shaders/Compute/FSL/sum_of_sines/sum_of_sines.fsl");
+	private ComputeKernel textureGen;
+	private ComputeKernel textureGenAdv;
 
 	public void RegenerateWaves() {
 		GenerateMesh();
 		GenerateSineWaves();
 	}
 
+	private void wave_tex_callback_func(Rid tex_rid) {
+		wave_tex.TextureRdRid = tex_rid;
+		RenderingServer.GlobalShaderParameterSet("waveTexture", wave_tex);
+	}
+
 
 	#region Overrides
 
 	public override void _Ready() {
-		textureGen.CreateBuffer("paramBuffer", RenderingDevice.UniformType.UniformBuffer, 32u, 0,0);
-		textureGen.CreateTexture("waveTexture", WaveCount, 2, 0, 1);
+		wave_tex = new Texture2Drd();
+		textureGen = sumOfSinesShader.GetKernel("textureGen");
+		textureGenAdv = sumOfSinesShader.GetKernel("textureGenAdv");
+		FSLTexture waveTex = textureGen.GetTexture("waveTexture");
+		waveTex.Set2DTexture(WaveCount, 2);
+		textureGenAdv.AssignResource(waveTex, "waveTexture");
 		
-		ComputeShader.BindTextureParameter("waveTexture", 
-			Callable.From(
-				(Texture2Drd tex_uniform) => {
-					wave_tex = tex_uniform;
-					RenderingServer.GlobalShaderParameterSet("waveTexture", wave_tex);
-				}));
+		_waveTexCallback = Callable.From<Rid>(wave_tex_callback_func);
+		waveTex.BindCallback(_waveTexCallback);
 		
 		_material = SumOfSinesTextureMat;
 		GenerateSineWaves();
@@ -109,42 +118,38 @@ public partial class Water : MeshInstance3D {
 		_material.SetShaderParameter("time", Time);
 	}
 
-	public override void _ExitTree() {
-		textureGen.Close();
-		base._ExitTree();
-	}
-
 	#endregion
 
 	private void GenerateSineWaves() {
-		if (_prevAmp != BaseAmplitude || _prevFreq != BaseFrequency || _prevGain != Gain || _prevLac != Lacunarity) {
-			var inputUniforms = new byte[32];
-			
-			float[] inputs = [BaseAmplitude, BaseFrequency, Lacunarity, Gain];
-			Buffer.BlockCopy( inputs, 0, inputUniforms, 0, sizeof(float) * 4);
-		
-			ComputeShader.SetBuffer("paramBuffer", inputUniforms);
-			_prevAmp = BaseAmplitude;
-			_prevFreq = BaseFrequency;
-			_prevGain = Gain;
-			_prevLac = Lacunarity;
-		}
-		
-		ComputeShader.SetTextureSize("waveTexture", WaveCount, 2);
+		// if (_prevAmp != BaseAmplitude || _prevFreq != BaseFrequency || _prevGain != Gain || _prevLac != Lacunarity) {
+		// 	var inputUniforms = new byte[32];
+		//
+		// 	float[] inputs = [BaseAmplitude, BaseFrequency, Lacunarity, Gain];
+		// 	Buffer.BlockCopy(inputs, 0, inputUniforms, 0, sizeof(float) * 4);
+		//
+		// 	textureGenAdv.SetBuffer("paramBuffer", inputUniforms);
+		// 	_prevAmp = BaseAmplitude;
+		// 	_prevFreq = BaseFrequency;
+		// 	_prevGain = Gain;
+		// 	_prevLac = Lacunarity;
+		// }
+		GenSeed();
 		_material.SetShaderParameter("wave_count", WaveCount);
-		new ComputePlan().AddShader(textureGen, WaveCount / 2, 1, 1, GenPushConstants()).Dispatch();
-		//textureGen.Dispatch(WaveCount / 2, 1, 1, GenPushConstants());
+		textureGenAdv.Dispatch(WaveCount, 1, 1, new Dictionary<StringName, Variant> {
+			{"waveCount", WaveCount},
+			{"baseSeed", _prevSeed},
+			{"baseAmplitude", BaseAmplitude},
+			{"baseFrequency", BaseFrequency},
+			{"lacunarity", Lacunarity},
+			{"gain", Gain}
+		});
+
 	}
 
-	private ByteBuffer GenPushConstants(bool newSeed = true) {
+	private void GenSeed() {
 		var rng = new RandomNumberGenerator();
 		float seedMod = rng.RandfRange(0f, 2f * Mathf.Pi);
-		if (!newSeed) {
-			seedMod = _prevSeed;
-		} else {
-			_prevSeed = seedMod;
-		}
-		return new ByteBuffer().Add(WaveCount).Add(seedMod);
+		_prevSeed = seedMod;
 	}
 
 	#region Helpers

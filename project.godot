@@ -10,8 +10,8 @@ config_version=5
 
 [application]
 
-config/name="GodotWaterRendering"
-run/main_scene="uid://8qxx4qgirqgb"
+config/name="GodotWaterRenderingFSL"
+run/main_scene="uid://cpwjm2lbw38ds"
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -25,11 +25,14 @@ window/size/viewport_width=1920
 window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/vsync/vsync_mode=0
 
 [dotnet]
 
-project/assembly_name="GraphicsTesting"
+project/assembly_name="GodotWaterRendering"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/csharp_gdextension_bindgen/plugin.cfg")
 
 [shader_globals]
 
@@ -37,31 +40,11 @@ camera_coords={
 "type": "vec3",
 "value": Vector3(0, 0, 0)
 }
-gradientMap={
-"type": "sampler2D",
-"value": ""
-}
-displacementMap={
-"type": "sampler2D",
-"value": ""
-}
 waveTexture={
 "type": "sampler2D",
 "value": ""
 }
 spectrumTexture={
-"type": "sampler2D",
-"value": ""
-}
-gaussian={
-"type": "sampler2D",
-"value": ""
-}
-foamMap={
-"type": "sampler2D",
-"value": ""
-}
-normalMap={
 "type": "sampler2D",
 "value": ""
 }
@@ -72,8 +55,4 @@ debugRender={
 renderFlags={
 "type": "uint",
 "value": 15
-}
-tileLength={
-"type": "float",
-"value": 0.0
 }

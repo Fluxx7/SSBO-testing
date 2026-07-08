@@ -1,0 +1,126 @@
+#include "shared_resources.fsl"
+//#define USE_NORMALIZATION
+
+layout(std430) buffer twiddleFactors {
+    float2 twiddles[];
+};
+
+
+// buffer shape:
+// [numCascades][2][N * N]
+layout(std430) buffer fft_buffers {
+    float2 fft_data[];
+};
+
+#define fft_index(x, y) fft_data[(cascade_index * N + y ) * N + x ] 
+#define fft_vindex(v) fft_index(v.x, v.y)
+
+#define FFT_SIZE 256
+#define FFT_SIZE_HALF 128
+
+
+kernel[32, 1, 1] twiddleGen(id : GlobalInvocationID, uint N) {
+	if (id.x >= (N / 2)) return;
+	uint x = id.x;
+	float theta = 2.0 * PI * float(x) / float(N);
+	twiddles[x] = float2(cos(theta), sin(theta));
+}
+
+shared float2 local_twiddles[FFT_SIZE_HALF];
+shared float2 local_data[2][FFT_SIZE];
+
+#define dest(index) local_data[curr_dest][index]
+#define source(index) local_data[curr_source][index]
+
+void ifft_stage(uint N, uint stage, uint curr_source, uint curr_dest, const uint3 coords) {
+	uint x_coord = coords.x;
+	uint y_coord = coords.y;
+	uint cascade_index = coords.z;
+	uint index_base = N >> (stage + 1);
+	uint group_size = 1 << stage;
+	uint group = x_coord & ~(group_size - 1);
+	uint group_index = x_coord & (group_size - 1);
+	
+	// compute the indices to read from
+	uint source_index_1 = x_coord;
+	uint source_index_2 = source_index_1 + N/2;
+
+	// compute the indices to write to
+	uint dest_index_1 = x_coord + group; 
+	uint dest_index_2 = dest_index_1 + group_size;
+
+	// calculate the twiddle factor index to read from and retrieve that value 
+	uint twiddle_index = (source_index_1 & (group_size - 1)) * index_base;
+	float2 twiddle = local_twiddles[twiddle_index];
+
+
+	// load and twiddle the "odd" value, and load the "even" value
+	float2 twiddled_x = complex_mult(twiddle, source(source_index_2));
+	float2 even_x = source(source_index_1);
+
+	// calculate the output values and write them to the determined indices
+#ifdef USE_NORMALIZATION
+	dest(dest_index_2) = complex_mult(even_x - twiddled_x, 0.5);
+	dest(dest_index_1) = complex_mult(even_x + twiddled_x, 0.5);
+#else
+	dest(dest_index_2) = even_x - twiddled_x;
+	dest(dest_index_1) = even_x + twiddled_x;
+#endif
+}
+
+kernel[FFT_SIZE_HALF, 1, 1] ifftRow(g_id : GlobalInvocationID, l_id : LocalInvocationID, wgs : WorkGroupSize) {
+	uint x_coord = g_id.x;
+	uint y_coord = g_id.y;
+	uint N = 2u * wgs.x;
+	if (x_coord >= N/2 || y_coord >= N || g_id.z >= MAX_CASCADES) {
+		return;
+	}
+	const int cascade_index = int(g_id.z);
+	
+	uint logN = uint(findMSB(N));
+	uint curr_source = 0;
+	uint curr_dest = 1;
+	local_twiddles[x_coord] = twiddles[x_coord];
+	local_data[0][x_coord] = fft_index(l_id.x, g_id.y);
+	local_data[0][x_coord + wgs.x] = fft_index(l_id.x + wgs.x, g_id.y);
+	barrier();
+	
+	for (uint stage = 0u; stage < logN; stage++) {
+		ifft_stage(N, stage, curr_source, curr_dest, uint3(x_coord, y_coord, cascade_index));
+		barrier();
+		
+		uint next_dest = curr_source;
+		curr_source = curr_dest;
+		curr_dest = next_dest;
+	}
+
+	fft_index(l_id.x, g_id.y) = local_data[curr_source][x_coord];
+	fft_index(l_id.x + wgs.x, g_id.y) = local_data[curr_source][x_coord + wgs.x];
+}
+
+kernel[FFT_SIZE_HALF, 1, 1] ifftColumn(g_id : GlobalInvocationID, l_id : LocalInvocationID, wgs : WorkGroupSize) {
+	uint x_coord = g_id.x;
+	uint y_coord = g_id.y;
+	uint N = 2u * wgs.x;
+	if (x_coord >= N/2 || y_coord >= N || g_id.z >= MAX_CASCADES) {
+		return;
+	}
+	const int cascade_index = int(g_id.z);
+	
+	uint logN = uint(findMSB(N));
+	uint curr_source = 0;
+	uint curr_dest = 1;
+	local_twiddles[x_coord] = twiddles[x_coord];
+	local_data[0][x_coord] = fft_index(g_id.y, l_id.x);
+	local_data[0][x_coord + wgs.x] = fft_index(g_id.y, l_id.x + wgs.x);
+	barrier();
+	for (uint stage = 0u; stage < logN; stage++) {
+		ifft_stage(N, stage, curr_source, curr_dest, uint3(x_coord, y_coord, cascade_index));
+		barrier();
+		uint next_dest = curr_source;
+		curr_source = curr_dest;
+		curr_dest = next_dest;
+	}
+	fft_index(g_id.y, l_id.x) = local_data[curr_source][x_coord];
+	fft_index(g_id.y, l_id.x + wgs.x) = local_data[curr_source][x_coord + wgs.x];
+}

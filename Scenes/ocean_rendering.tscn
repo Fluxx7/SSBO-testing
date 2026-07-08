@@ -1,0 +1,310 @@
+[gd_scene format=3 uid="uid://cpwjm2lbw38ds"]
+
+[ext_resource type="Script" uid="uid://cky6u0t1f7a7w" path="res://assets/Scripts/Utility/FPSLabel.cs" id="1_jpx6j"]
+[ext_resource type="Script" uid="uid://cgupe5dpee74f" path="res://assets/Scripts/Utility/WindowScripts/DebugWindow.cs" id="2_gi1j8"]
+[ext_resource type="Script" uid="uid://b14j8uj81cqh4" path="res://assets/Scripts/Utility/ControllableCamera.cs" id="4_62ipq"]
+[ext_resource type="Shader" uid="uid://ydttxe06jcko" path="res://assets/Shaders/jonswap_water.gdshader" id="5_e23y0"]
+[ext_resource type="Script" uid="uid://ddumaw17bksl1" path="res://assets/Scripts/Water/FastTextureWater.cs" id="6_epyer"]
+[ext_resource type="Script" uid="uid://pcg032ja3p6u" path="res://assets/Scripts/Water/FastWaterController.cs" id="8_6y65k"]
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_57h4j"]
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_21h3a"]
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_sjp6b"]
+
+[sub_resource type="Texture2DRD" id="Texture2DRD_2ot2b"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_g538k"]
+sky_top_color = Color(0, 0.22864681, 0.46740246, 1)
+sky_horizon_color = Color(0, 0.4144978, 0.70805776, 1)
+sky_curve = 0.3693434
+ground_bottom_color = Color(1.4439226e-07, 0.34898525, 0.60142386, 1)
+ground_horizon_color = Color(0, 0.41568628, 0.70980394, 1)
+ground_curve = 0.39396572
+sun_angle_max = 26.25
+sun_curve = 0.08615249
+
+[sub_resource type="Sky" id="Sky_kxn0a"]
+sky_material = SubResource("ProceduralSkyMaterial_g538k")
+process_mode = 1
+
+[sub_resource type="Environment" id="Environment_6kuhc"]
+background_mode = 2
+sky = SubResource("Sky_kxn0a")
+ambient_light_source = 3
+ambient_light_color = Color(0.431282, 0.611583, 1, 1)
+tonemap_mode = 4
+fog_light_color = Color(0.9187855, 0.95721394, 0.8535805, 1)
+fog_light_energy = 0.54
+fog_density = 0.0003
+fog_sky_affect = 0.1
+fog_depth_curve = 2.46228
+fog_depth_begin = 0.0
+fog_depth_end = 335.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_57h4j"]
+render_priority = 0
+shader = ExtResource("5_e23y0")
+shader_parameter/water_scatter_color = Color(3.85046e-07, 0.7007736, 0.5251843, 1)
+shader_parameter/air_bubble_color = Color(0.07341317, 0.114474334, 0.19907731, 1)
+shader_parameter/height_scale = 21.1
+shader_parameter/k2 = 0.2
+shader_parameter/k3 = 8.86
+shader_parameter/k4 = 2.9
+shader_parameter/air_bubble_density = 3.4
+shader_parameter/tileLengths = PackedFloat32Array(0, 0, 0, 0)
+shader_parameter/cascade_count = 2
+shader_parameter/renderDiffuse = true
+shader_parameter/renderSpecular = true
+shader_parameter/renderReflections = true
+shader_parameter/renderFoam = true
+shader_parameter/cutoff_dist = 1000.0
+shader_parameter/cutoff_strength = 0.0007
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_21h3a"]
+material = SubResource("ShaderMaterial_57h4j")
+size = Vector2(200, 200)
+subdivide_width = 512
+subdivide_depth = 512
+
+[node name="Node3D" type="Node3D" unique_id=1407384273]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1072325012]
+follow_viewport_enabled = true
+
+[node name="Label" type="Label" parent="CanvasLayer" unique_id=1514944432]
+z_index = 20
+offset_left = 1.0
+offset_top = -1.0
+offset_right = 367.0
+offset_bottom = 28.0
+script = ExtResource("1_jpx6j")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer" unique_id=771151890]
+offset_left = 1708.0
+offset_top = 1.0
+offset_right = 1916.0
+offset_bottom = 240.0
+
+[node name="Debug View" type="Button" parent="CanvasLayer/VBoxContainer" unique_id=1942487460]
+layout_mode = 2
+toggle_mode = true
+text = "Debug View"
+
+[node name="Water Controls" type="Button" parent="CanvasLayer/VBoxContainer" unique_id=2101760572]
+layout_mode = 2
+toggle_mode = true
+text = "Water Controls"
+
+[node name="Visual Controls" type="Button" parent="CanvasLayer/VBoxContainer" unique_id=68667409]
+layout_mode = 2
+toggle_mode = true
+text = "Visual Controls"
+
+[node name="Debug" type="Window" parent="." unique_id=252567068]
+oversampling_override = 1.0
+title = "Debug Menu"
+position = Vector2i(0, 36)
+size = Vector2i(775, 608)
+visible = false
+content_scale_size = Vector2i(775, 608)
+content_scale_mode = 2
+content_scale_aspect = 4
+script = ExtResource("2_gi1j8")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="Debug" unique_id=480031529]
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Debug/CanvasLayer" unique_id=429824598]
+offset_right = 776.0
+offset_bottom = 608.0
+
+[node name="Texture Container" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer" unique_id=1552891140]
+layout_mode = 2
+
+[node name="Upper Container" type="HBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container" unique_id=482499223]
+auto_translate_mode = 1
+layout_mode = 2
+
+[node name="Initial Spectrum" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container" unique_id=1302108619]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Initial Spectrum" unique_id=554030817]
+layout_mode = 2
+text = "Initial Spectrum Map"
+horizontal_alignment = 1
+
+[node name="SpectrumZero" type="TextureRect" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Initial Spectrum" unique_id=1883643111]
+texture_filter = 1
+texture_repeat = 1
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+texture = SubResource("Texture2DRD_57h4j")
+expand_mode = 5
+
+[node name="Current Spectrum" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container" unique_id=293651500]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Current Spectrum" unique_id=1394390685]
+layout_mode = 2
+text = "Spectrum Map"
+horizontal_alignment = 1
+
+[node name="Spectrum" type="TextureRect" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Current Spectrum" unique_id=202480727]
+texture_filter = 1
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+texture = SubResource("Texture2DRD_21h3a")
+expand_mode = 5
+
+[node name="Normals" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container" unique_id=383130055]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Normals" unique_id=969452723]
+layout_mode = 2
+text = "Normal Map"
+horizontal_alignment = 1
+
+[node name="Normals" type="TextureRect" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Normals" unique_id=509893100]
+texture_filter = 1
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+texture = SubResource("Texture2DRD_21h3a")
+expand_mode = 5
+
+[node name="Lower Container" type="HBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container" unique_id=879074146]
+layout_mode = 2
+
+[node name="Displacement" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container" unique_id=2008683874]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Displacement" unique_id=1967313923]
+layout_mode = 2
+text = "Displacement Map"
+horizontal_alignment = 1
+
+[node name="Displacement" type="TextureRect" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Displacement" unique_id=1387736225]
+texture_filter = 1
+texture_repeat = 1
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+texture = SubResource("Texture2DRD_sjp6b")
+expand_mode = 5
+
+[node name="Gradients" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container" unique_id=778673640]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Gradients" unique_id=961925520]
+layout_mode = 2
+text = "Gradient Map"
+horizontal_alignment = 1
+
+[node name="Gradients" type="TextureRect" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Gradients" unique_id=2025082826]
+texture_filter = 1
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+texture = SubResource("Texture2DRD_2ot2b")
+expand_mode = 5
+
+[node name="Foam" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container" unique_id=1352210996]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Foam" unique_id=1232060367]
+layout_mode = 2
+text = "Foam Map"
+horizontal_alignment = 1
+
+[node name="Foam" type="TextureRect" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Foam" unique_id=531979992]
+custom_minimum_size = Vector2(256, 0)
+layout_mode = 2
+texture = SubResource("Texture2DRD_2ot2b")
+expand_mode = 5
+
+[node name="Button Container" type="HBoxContainer" parent="Debug/CanvasLayer/VBoxContainer" unique_id=274469634]
+auto_translate_mode = 1
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Button Container" unique_id=456224159]
+layout_mode = 2
+text = "Debug Render Mode:"
+
+[node name="OptionButton" type="OptionButton" parent="Debug/CanvasLayer/VBoxContainer/Button Container" unique_id=1611258477]
+layout_mode = 2
+selected = 0
+item_count = 4
+popup/item_0/text = "Off"
+popup/item_0/id = 0
+popup/item_1/text = "Displacement"
+popup/item_1/id = 1
+popup/item_2/text = "Normals"
+popup/item_2/id = 2
+popup/item_3/text = "Gradients"
+popup/item_3/id = 3
+
+[node name="Visual Controls" type="Window" parent="." unique_id=663455485]
+oversampling_override = 1.0
+title = "Visual Controls"
+position = Vector2i(1133, 136)
+size = Vector2i(775, 608)
+visible = false
+content_scale_size = Vector2i(775, 608)
+content_scale_mode = 2
+content_scale_aspect = 4
+
+[node name="Water Controls" type="Window" parent="." unique_id=809034799]
+oversampling_override = 1.0
+title = "Water Controls"
+position = Vector2i(1133, 101)
+size = Vector2i(775, 608)
+visible = false
+content_scale_size = Vector2i(775, 608)
+content_scale_mode = 2
+content_scale_aspect = 4
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=322091660]
+transform = Transform3D(-0.9238795, 0.091282815, -0.37163705, 0, 0.9711343, 0.23853347, 0.3826835, 0.22037618, -0.8972111, -50, 11.53, -100)
+current = true
+script = ExtResource("4_62ipq")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=518806376]
+environment = SubResource("Environment_6kuhc")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=1967441659]
+transform = Transform3D(-0.9993919, 0.013411786, 0.03221955, -8.070968e-08, -0.9232092, 0.38429508, 0.034899566, 0.3840608, 0.9226473, 0, 6.89, 0)
+
+[node name="Water" type="MeshInstance3D" parent="." unique_id=1393861654 node_paths=PackedStringArray("Camera", "visualsWindow", "visualsWindowToggle")]
+mesh = SubResource("PlaneMesh_21h3a")
+script = ExtResource("6_epyer")
+Subdivide = Vector2i(1024, 1024)
+Size = Vector2(2000, 2000)
+Camera = NodePath("../Camera3D")
+visualsWindow = NodePath("../Visual Controls")
+visualsWindowToggle = NodePath("../CanvasLayer/VBoxContainer/Visual Controls")
+ScatterColor = Color(0, 0.77254903, 0.39215687, 1)
+BubbleColor = Color(0.047058824, 0.101960786, 0.1882353, 1)
+WaterColor = Color(0.039215688, 0.101960786, 0.21568628, 1)
+HeightScale = 3.14
+K2 = 0.86
+K3 = 0.95
+K4 = 2.0
+BubbleDensity = 2.61
+
+[node name="WaterController" type="Node" parent="Water" unique_id=1829685482 node_paths=PackedStringArray("controlWindow", "controlWindowToggle")]
+script = ExtResource("8_6y65k")
+spectrum = 4
+_depth = 1000.0
+_windSpeed = 25.0
+_fetch = 80000.0
+tessendorfAttenuation = 0.08
+spread = 4
+_spreadingStrength = 0.7
+_swell = 0.5
+controlWindow = NodePath("../../Water Controls")
+controlWindowToggle = NodePath("../../CanvasLayer/VBoxContainer/Water Controls")
+numCascades = 4
+
+[connection signal="toggled" from="CanvasLayer/VBoxContainer/Debug View" to="Debug" method="set_visible"]
+[connection signal="toggled" from="CanvasLayer/VBoxContainer/Water Controls" to="Water Controls" method="set_visible"]
+[connection signal="close_requested" from="Debug" to="Debug" method="hide"]
+[connection signal="close_requested" from="Debug" to="CanvasLayer/VBoxContainer/Debug View" method="set_pressed" binds= [false]]
+[connection signal="item_selected" from="Debug/CanvasLayer/VBoxContainer/Button Container/OptionButton" to="Debug" method="DebugRenderControl"]
