@@ -29,8 +29,8 @@ kernel[32, 1, 1] twiddleGen(id : GlobalInvocationID, uint N) {
 shared float2 local_twiddles[FFT_SIZE_HALF];
 shared float2 local_data[2][FFT_SIZE];
 
-#define dest(index) local_data[curr_dest][index]
-#define source(index) local_data[curr_source][index]
+#define dest(ind) local_data[curr_dest][ind]
+#define source(ind) local_data[curr_source][ind]
 
 void ifft_stage(uint N, uint stage, uint curr_source, uint curr_dest, const uint3 coords) {
 	uint x_coord = coords.x;

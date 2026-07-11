@@ -12,7 +12,8 @@ uniform sampler2DArray normalMaps : filter_nearest_mipmap_anisotropic;
 uniform float tileLengths[MAX_CASCADES];
 uniform int cascade_count = 4;
 
-global uniform int debugRender;
+uniform int debugRender;
+uniform int debugCascade = 0;
 global uniform uint renderFlags;
 uniform bool renderDiffuse = true;
 uniform bool renderSpecular = true;
@@ -75,17 +76,12 @@ void fragment() {
 			NORMAL = mix((VIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz, (VIEW_MATRIX * vec4(local_normal,0.0)).xyz, dist_factor);
 			break;
 		case 1: // Displacement
-			ALBEDO = heightMapSamples[0] * exp(-dist*0.00075) / 5.0;
+			ALBEDO = heightMapSamples[debugCascade] * exp(-dist*0.00075) / 5.0;
 			ROUGHNESS = 1.0;
 			SPECULAR = 0.0;
 			break;
-		case 2: // Normals
-			ALBEDO = texture(normalMaps, vec3(coords[0], 0.0)).rgb * exp(-dist*0.00075) / 2.0;
-			ROUGHNESS = 1.0;
-			SPECULAR = 0.0;
-			break;
-		case 3: // Gradients
-			ALBEDO = texture(gradientMaps, vec3(coords[0], 0.0)).rgb * exp(-dist*0.00075);
+		case 2: // Gradients
+			ALBEDO = texture(gradientMaps, vec3(coords[debugCascade], float(debugCascade))).rgb * exp(-dist*0.00075);
 			ROUGHNESS = 1.0;
 			SPECULAR = 0.0;
 			break;

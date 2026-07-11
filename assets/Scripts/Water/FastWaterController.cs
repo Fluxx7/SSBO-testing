@@ -5,9 +5,6 @@ using FluxxiShaderLang;
 using GodotWaterRendering.assets.Scripts.Utility;
 
 public partial class FastWaterController : Node {
-	private class FuckYouRefSemantics<T>(T start_val) {
-		public T ref_val = start_val;
-	}
 	
 	enum SpectrumFunction {
 		Tessendorf,
@@ -27,61 +24,26 @@ public partial class FastWaterController : Node {
 
 	private bool _simulate = true;
 
+	[ExportGroup("Spectrum Controls")] [Export]
+	private SpectrumFunction spectrum = SpectrumFunction.Tma;
 
+	[Export] private float _depth = 100f;
+	[Export] private float _windSpeed = 19f;
+	[Export] private float _windDirection = 0f;
+	[Export] private float _fetch = 100000f;
 
-
-	private FuckYouRefSemantics<SpectrumFunction> spectrumref = new(SpectrumFunction.Tma);
-	private FuckYouRefSemantics<DirectionalSpreadingFunction> spreadingref = new(DirectionalSpreadingFunction.Tessendorf);
-	private FuckYouRefSemantics<float> depthref = new(100f);
-	private FuckYouRefSemantics<float> windspeedref = new(10f);
-	private FuckYouRefSemantics<float> winddirref = new(0f);
-	private FuckYouRefSemantics<float> fetchref = new(100000f);
-	private FuckYouRefSemantics<float> spreadstrref = new(0.7f);
-	private FuckYouRefSemantics<float> swellref = new(0.5f);
-	
-	[ExportGroup("Spectrum Controls")] 
-	[Export] private SpectrumFunction spectrum {
-		get => spectrumref.ref_val;
-		set => spectrumref.ref_val = value;
-	}
-	[Export] private float _depth {
-		get => depthref.ref_val;
-		set => depthref.ref_val = value;
-	}
-	[Export] private float _windSpeed {
-		get => windspeedref.ref_val;
-		set => windspeedref.ref_val = value;
-	}
-	[Export] private float _windDirection {
-		get => winddirref.ref_val;
-		set => winddirref.ref_val = value;
-	}
-	[Export] private float _fetch {
-		get => fetchref.ref_val;
-		set => fetchref.ref_val = value;
-	}
-
-	[ExportSubgroup("Tessendorf Controls")] [Export]
-	private float _philipsAmplitude = 0.02f;
+	[ExportSubgroup("Tessendorf Controls")] 
+	[Export] private float _philipsAmplitude = 0.02f;
 
 	[Export] private float tessendorfAttenuation = 0.02f;
 
-	[ExportSubgroup("Spreading Controls")] [Export]
-	private DirectionalSpreadingFunction spread {
-		get => spreadingref.ref_val;
-		set => spreadingref.ref_val = value;
-	}
+	[ExportSubgroup("Spreading Controls")] 
+	[Export] private DirectionalSpreadingFunction spread = DirectionalSpreadingFunction.DonelanBanner;
 
-	[Export(PropertyHint.Range, "0, 1")] private float _spreadingStrength {
-		get => spreadstrref.ref_val;
-		set => spreadstrref.ref_val = value;
-	}
+	[Export(PropertyHint.Range, "0, 1")] private float _spreadingStrength = 0.9f;
 
 	[Export(PropertyHint.Range, "0, 1, or_greater")]
-	private float _swell {
-		get => swellref.ref_val;
-		set => swellref.ref_val = value;
-	}
+	private float _swell = 1f;
 
 	[ExportGroup("")] [Export] private Window controlWindow;
 
@@ -139,8 +101,8 @@ public partial class FastWaterController : Node {
 	private uint _texSize = (uint)Math.Pow(2, StartingPow);
 	private const float G = 9.81f;
 
-	private FSLTexture gaussianNoise;
-	private FSLBuffer oceanParams;
+	private FSLTexture2DArray gaussianNoise;
+	private FSLStorageBuffer oceanParams;
 
 	private Dictionary<StringName, Texture2DArrayRD> texRdCache = new();
 	private Array<Image> gaussian_cache = [];
@@ -203,9 +165,9 @@ public partial class FastWaterController : Node {
 
 	private void UpdateCascadeCount() {
 		uint safeCascades = uint.Max(numCascades, 2);
-		spectrums.TextureSet3D("spectrumMap", _texSize, _texSize, safeCascades);
-		spreadings.TextureSet3D("baseSpectrum", _texSize, _texSize, safeCascades);
-		gaussianNoise.Set3DTexture(_texSize, _texSize, safeCascades, gaussian_cache[..(int)safeCascades]);
+		spectrums.GetTexture2DArray("spectrumMap").SetTextures(_texSize, _texSize, safeCascades);
+		spreadings.GetTexture2DArray("baseSpectrum").SetTextures(_texSize, _texSize, safeCascades);
+		gaussianNoise.SetTextures(_texSize, _texSize, safeCascades, gaussian_cache[..(int)safeCascades]);
 		fftHandler.UpdateCascadeCount(numCascades);
 		UpdateParamBuffer();
 		GenerateSpectrum();
@@ -218,14 +180,14 @@ public partial class FastWaterController : Node {
 		spreadings = spreadingsShader.GetKernelGroup();
 		bufferUpdaters = bufferUpdateShader.GetKernelGroup();
 		
-		FSLTexture spectrumMap = spectrums.GetTexture("spectrumMap");
-		spectrumMap.Set3DTexture(_texSize, _texSize, uint.Max(numCascades, 2));
-		FSLTexture baseSpectrum = spreadings.GetTexture("baseSpectrum");
-		baseSpectrum.Set3DTexture(_texSize, _texSize, uint.Max(numCascades, 2));
-		gaussianNoise = spreadings.GetTexture("spectrumCoefficients");
-		oceanParams = bufferUpdaters.GetBuffer("oceanParams");
+		FSLTexture2DArray spectrumMap = spectrums.GetTexture2DArray("spectrumMap");
+		spectrumMap.SetTextures(_texSize, _texSize, uint.Max(numCascades, 2));
+		FSLTexture2DArray baseSpectrum = spreadings.GetTexture2DArray("baseSpectrum");
+		baseSpectrum.SetTextures(_texSize, _texSize, uint.Max(numCascades, 2));
+		gaussianNoise = spreadings.GetTexture2DArray("spectrumCoefficients");
+		oceanParams = bufferUpdaters.GetStorageBuffer("oceanParams");
 		oceanParams.SetUnsizedElementCount(MAX_CASCADES);
-		FSLBuffer spectrumData = spreadings.GetBuffer("spectrumDataBuffer");
+		FSLStorageBuffer spectrumData = spreadings.GetStorageBuffer("spectrumDataBuffer");
 		spectrums.AssignResource(spectrumData, "spectrumDataBuffer");
 		UpdateParamBuffer();
 		for (var tl_index = 0; tl_index < _tileLengths.Count; tl_index++) {
@@ -236,7 +198,7 @@ public partial class FastWaterController : Node {
 		spreadings.AssignResource(spectrumMap, "spectrumMap");
 		spreadings.AssignResource(oceanParams, "oceanParams");
 		
-		baseSpectrum.BindCallback(Callable.From(MakeTextureCallback("baseSpectrum")));
+		baseSpectrum.ConnectAndCall(Callable.From(MakeTextureCallback("baseSpectrum")));
 
 		GenerateGaussian();
 		OptimFFTHandler.TextureCallbacks callbacks = new OptimFFTHandler.TextureCallbacks{
@@ -277,7 +239,7 @@ public partial class FastWaterController : Node {
 		}
 		
 
-		gaussianNoise.Set3DTexture(_texSize, _texSize, numCascades, gaussian_cache[..(int)numCascades]);
+		gaussianNoise.SetTextures(_texSize, _texSize, numCascades, gaussian_cache[..(int)numCascades]);
 	}
 
 	private void GenerateSpectrum() {
@@ -333,19 +295,19 @@ public partial class FastWaterController : Node {
 
 	
 
-	private HBoxContainer createFloatSelector(string text, FuckYouRefSemantics<float> parameter, float min_val = 0f, float max_val = 100f, float step = 1f, bool allow_greater = false) {
+	private HBoxContainer createFloatSelector(string text, float starting_value, Action<float> setter, float min_val = 0f, float max_val = 100f, float step = 1f, bool allow_greater = false) {
 		var newContainer = new HBoxContainer();
 		var colorLabel = new Label();
 		colorLabel.Text = text;
 		
 		var valueSelector = new SpinBox();
-		valueSelector.Value = parameter.ref_val;
 		valueSelector.MinValue = min_val;
 		valueSelector.MaxValue = max_val;
 		valueSelector.AllowGreater = allow_greater;
 		valueSelector.Step = step;
+		valueSelector.Value = starting_value;
 		valueSelector.ValueChanged += (new_val) => {
-			parameter.ref_val = (float) new_val;
+			setter((float)new_val);
 			UpdateParamBuffer();
 			GenerateSpectrum();
 			GenerateWaves(0f);
@@ -441,12 +403,12 @@ public partial class FastWaterController : Node {
 			spectrumLabel.Text = "Spectrum Function:";
 
 			var spectrumOption = new OptionButton();
-			spectrumOption.Selected = (int) spectrum;
 			spectrumOption.AddItem("Tessendorf", 0);
 			spectrumOption.AddItem("Attenuated Tessendorf", 1);
 			spectrumOption.AddItem("Pierson-Moskowitz", 2);
 			spectrumOption.AddItem("JONSWAP", 3);
 			spectrumOption.AddItem("TMA", 4);
+			spectrumOption.Selected = (int) spectrum;
 			spectrumOption.ItemSelected += index => {
 				spectrum = (SpectrumFunction)index;
 				GenerateSpectrum();
@@ -456,22 +418,22 @@ public partial class FastWaterController : Node {
 			spectrumSelector.AddChild(spectrumLabel);
 			spectrumSelector.AddChild(spectrumOption);
 		}
-		HBoxContainer windSpeedControls = createFloatSelector("Wind Speed:", windspeedref, 0f, 1000f, 0.1f);
-		HBoxContainer windDirectionControls = createFloatSelector("Wind Direction:", winddirref, -180f, 180f, 5f);
-		HBoxContainer depthControls = createFloatSelector("Depth:", depthref, 5f, 100000f, 5f);
-		HBoxContainer fetchControls = createFloatSelector("Fetch:", fetchref, 100f, 10_000_000f, 100f);
+		HBoxContainer windSpeedControls = createFloatSelector("Wind Speed:", _windSpeed, new_val => _windSpeed = new_val, 0.1f, 1000f, 0.1f);
+		HBoxContainer windDirectionControls = createFloatSelector("Wind Direction:", _windDirection, new_val => _windDirection = new_val, -180f, 180f, 5f);
+		HBoxContainer depthControls = createFloatSelector("Depth:", _depth, new_val => _depth = new_val, 5f, 100000f, 5f);
+		HBoxContainer fetchControls = createFloatSelector("Fetch:", _fetch, new_val => _fetch = new_val, 100f, 10_000_000f, 100f);
 		var spreadingSelector = new HBoxContainer();
 		{
 			var spreadingLabel = new Label();
 			spreadingLabel.Text = "Directional Spreading Function:";
 
 			var spreadingOption = new OptionButton();
-			spreadingOption.Selected = (int) spread;
 			spreadingOption.AddItem("None", 0);
 			spreadingOption.AddItem("Positive Cosine", 1);
 			spreadingOption.AddItem("Mitsuyasu", 2);
 			spreadingOption.AddItem("Hasselmann", 3);
 			spreadingOption.AddItem("Donelan-Banner", 4);
+			spreadingOption.Selected = (int) spread;
 			spreadingOption.ItemSelected += index => {
 				spread = (DirectionalSpreadingFunction)index;
 				GenerateSpectrum();
@@ -481,8 +443,8 @@ public partial class FastWaterController : Node {
 			spreadingSelector.AddChild(spreadingLabel);
 			spreadingSelector.AddChild(spreadingOption);
 		}
-		HBoxContainer spreadStrengthControls = createFloatSelector("Spreading Strength:", spreadstrref, 0f, 1f, 0.05f);
-		HBoxContainer swellControls = createFloatSelector("Swell:", swellref, 0f, 1f, 0.05f, true);
+		HBoxContainer spreadStrengthControls = createFloatSelector("Spreading Strength:", _spreadingStrength,new_val => _spreadingStrength = new_val, 0f, 1f, 0.05f);
+		HBoxContainer swellControls = createFloatSelector("Swell:", _swell,new_val => _swell = new_val, 0f, 1f, 0.05f, true);
 		
 		parameterControls.AddChild(spectrumSelector);
 		parameterControls.AddChild(windSpeedControls);

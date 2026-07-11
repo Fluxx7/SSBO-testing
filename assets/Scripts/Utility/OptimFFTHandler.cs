@@ -30,7 +30,7 @@ public partial class OptimFFTHandler : RefCounted {
 		_N = 256;
 	}
 	
-	public OptimFFTHandler(uint N, uint num_cascades, FSLTexture init_spectrum_texture, FSLBuffer ocean_params, TextureCallbacks callbacks) {
+	public OptimFFTHandler(uint N, uint num_cascades, FSLTexture2DArray init_spectrum_texture, FSLStorageBuffer ocean_params, TextureCallbacks callbacks) {
 		_N = N;
 		this.num_cascades = num_cascades;
 		Init(init_spectrum_texture, ocean_params, callbacks);
@@ -39,53 +39,54 @@ public partial class OptimFFTHandler : RefCounted {
 	public void UpdateCascadeCount(uint new_count) {
 		num_cascades = new_count;
 		uint safeCascades = uint.Max(new_count, 2);
-		tessendorfFuncs.TextureSet3D("spectrumTexture", _N, _N, safeCascades);
+		tessendorfFuncs.GetTexture2DArray("spectrumTexture").SetTextures(_N, _N, safeCascades);
 		foreach (var fft in ffts) {
-			fft.BufferSetUnsizedElementCount("fft_buffers", _N * _N * num_cascades);
+			fft.GetStorageBuffer("fft_buffers").SetUnsizedElementCount(_N * _N * num_cascades);
 		}
-		tessendorfFuncs.TextureSet3D("heightTexture", _N, _N, safeCascades);
-		tessendorfFuncs.TextureSet3D("gradientTexture", _N, _N, safeCascades);
-		tessendorfFuncs.TextureSet3D("foamTexture", _N, _N, safeCascades);
+		tessendorfFuncs.GetTexture2DArray("heightTexture").SetTextures(_N, _N, safeCascades);
+		tessendorfFuncs.GetTexture2DArray("gradientTexture").SetTextures(_N, _N, safeCascades);
+		tessendorfFuncs.GetTexture2DArray("foamTexture").SetTextures(_N, _N, safeCascades);
 	}
 
-	private void Init(FSLTexture init_spectrum_texture, FSLBuffer ocean_params, TextureCallbacks callbacks) {
+	private void Init(FSLTexture2DArray init_spectrum_texture, FSLStorageBuffer ocean_params, TextureCallbacks callbacks) {
 		tessendorfFuncs = tessendorfShader.GetKernelGroup();
 		
 		tessendorfFuncs.AssignResource(init_spectrum_texture, "baseSpectrum");
 		tessendorfFuncs.AssignResource(ocean_params, "oceanParams");
-		tessendorfFuncs.TextureSet3D("spectrumTexture", _N, _N, uint.Max(num_cascades, 2));
-		tessendorfFuncs.TextureBindCallback("spectrumTexture", Callable.From(callbacks.spectrumCallback));
+		FSLTexture2DArray spectrumTexture = tessendorfFuncs.GetTexture2DArray("spectrumTexture");
+		spectrumTexture.SetTextures(_N, _N, uint.Max(num_cascades, 2));
+		spectrumTexture.ConnectAndCall(Callable.From(callbacks.spectrumCallback));
 
 		twiddleGen = fftShader.GetKernel("twiddleGen");
-		FSLBuffer twiddleBuffer = twiddleGen.GetBuffer("twiddleFactors");
+		FSLStorageBuffer twiddleBuffer = twiddleGen.GetStorageBuffer("twiddleFactors");
 		twiddleBuffer.SetUnsizedElementCount(_N / 2);
 		for (var i = 0; i < num_ffts; i++) {
 			ComputeGroup fft = fftShader.GetKernelGroup();
-			FSLBuffer fft_buffer = tessendorfFuncs.GetBuffer($"fft{i + 1}_buffers");
+			FSLStorageBuffer fft_buffer = tessendorfFuncs.GetStorageBuffer($"fft{i + 1}_buffers");
 			fft_buffer.SetUnsizedElementCount(_N * _N * num_cascades);
 			fft.AssignResource(fft_buffer, "fft_buffers");
 			fft.AssignResource(twiddleBuffer, "twiddleFactors");
 			ffts.Add(fft);
 		}
 
-		FSLTexture displacement_texture = tessendorfFuncs.GetTexture("heightTexture");
-		FSLTexture gradient_texture = tessendorfFuncs.GetTexture("gradientTexture");
-		FSLTexture foam_texture = tessendorfFuncs.GetTexture("foamTexture");
+		FSLTexture2DArray displacement_texture = tessendorfFuncs.GetTexture2DArray("heightTexture");
+		FSLTexture2DArray gradient_texture = tessendorfFuncs.GetTexture2DArray("gradientTexture");
+		FSLTexture2DArray foam_texture = tessendorfFuncs.GetTexture2DArray("foamTexture");
 		
-		displacement_texture.Set3DTexture(_N, _N, uint.Max(num_cascades, 2));
-		gradient_texture.Set3DTexture(_N, _N, uint.Max(num_cascades, 2));
-		foam_texture.Set3DTexture(_N, _N, uint.Max(num_cascades, 2));
+		displacement_texture.SetTextures(_N, _N, uint.Max(num_cascades, 2));
+		gradient_texture.SetTextures(_N, _N, uint.Max(num_cascades, 2));
+		foam_texture.SetTextures(_N, _N, uint.Max(num_cascades, 2));
 		
-		displacement_texture.BindCallback(Callable.From(callbacks.heightCallback));
-		gradient_texture.BindCallback(Callable.From(callbacks.gradientCallback));
-		foam_texture.BindCallback(Callable.From(callbacks.foamCallback));
+		displacement_texture.ConnectAndCall(Callable.From(callbacks.heightCallback));
+		gradient_texture.ConnectAndCall(Callable.From(callbacks.gradientCallback));
+		foam_texture.ConnectAndCall(Callable.From(callbacks.foamCallback));
 	}
 
 	public void Resize(uint new_size) {
 		_N = new_size;
 		foreach (var fft in ffts) {
-			fft.BufferSetUnsizedElementCount("fft_buffers", _N * _N * num_cascades);
-			fft.BufferSetUnsizedElementCount("twiddleFactors", _N / 2);
+			fft.GetStorageBuffer("fft_buffers").SetUnsizedElementCount(_N * _N * num_cascades);
+			fft.GetStorageBuffer("twiddleFactors").SetUnsizedElementCount(_N / 2);
 		}
 	}
 	

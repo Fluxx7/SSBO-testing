@@ -1,19 +1,10 @@
 [gd_scene format=3 uid="uid://cpwjm2lbw38ds"]
 
 [ext_resource type="Script" uid="uid://cky6u0t1f7a7w" path="res://assets/Scripts/Utility/FPSLabel.cs" id="1_jpx6j"]
-[ext_resource type="Script" uid="uid://cgupe5dpee74f" path="res://assets/Scripts/Utility/WindowScripts/DebugWindow.cs" id="2_gi1j8"]
 [ext_resource type="Script" uid="uid://b14j8uj81cqh4" path="res://assets/Scripts/Utility/ControllableCamera.cs" id="4_62ipq"]
 [ext_resource type="Shader" uid="uid://ydttxe06jcko" path="res://assets/Shaders/jonswap_water.gdshader" id="5_e23y0"]
 [ext_resource type="Script" uid="uid://ddumaw17bksl1" path="res://assets/Scripts/Water/FastTextureWater.cs" id="6_epyer"]
 [ext_resource type="Script" uid="uid://pcg032ja3p6u" path="res://assets/Scripts/Water/FastWaterController.cs" id="8_6y65k"]
-
-[sub_resource type="Texture2DRD" id="Texture2DRD_57h4j"]
-
-[sub_resource type="Texture2DRD" id="Texture2DRD_21h3a"]
-
-[sub_resource type="Texture2DRD" id="Texture2DRD_sjp6b"]
-
-[sub_resource type="Texture2DRD" id="Texture2DRD_2ot2b"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_g538k"]
 sky_top_color = Color(0, 0.22864681, 0.46740246, 1)
@@ -55,6 +46,8 @@ shader_parameter/k4 = 2.9
 shader_parameter/air_bubble_density = 3.4
 shader_parameter/tileLengths = PackedFloat32Array(0, 0, 0, 0)
 shader_parameter/cascade_count = 2
+shader_parameter/debugRender = 0
+shader_parameter/debugCascade = 0
 shader_parameter/renderDiffuse = true
 shader_parameter/renderSpecular = true
 shader_parameter/renderReflections = true
@@ -102,145 +95,6 @@ layout_mode = 2
 toggle_mode = true
 text = "Visual Controls"
 
-[node name="Debug" type="Window" parent="." unique_id=252567068]
-oversampling_override = 1.0
-title = "Debug Menu"
-position = Vector2i(0, 36)
-size = Vector2i(775, 608)
-visible = false
-content_scale_size = Vector2i(775, 608)
-content_scale_mode = 2
-content_scale_aspect = 4
-script = ExtResource("2_gi1j8")
-
-[node name="CanvasLayer" type="CanvasLayer" parent="Debug" unique_id=480031529]
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Debug/CanvasLayer" unique_id=429824598]
-offset_right = 776.0
-offset_bottom = 608.0
-
-[node name="Texture Container" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer" unique_id=1552891140]
-layout_mode = 2
-
-[node name="Upper Container" type="HBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container" unique_id=482499223]
-auto_translate_mode = 1
-layout_mode = 2
-
-[node name="Initial Spectrum" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container" unique_id=1302108619]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Initial Spectrum" unique_id=554030817]
-layout_mode = 2
-text = "Initial Spectrum Map"
-horizontal_alignment = 1
-
-[node name="SpectrumZero" type="TextureRect" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Initial Spectrum" unique_id=1883643111]
-texture_filter = 1
-texture_repeat = 1
-custom_minimum_size = Vector2(256, 0)
-layout_mode = 2
-texture = SubResource("Texture2DRD_57h4j")
-expand_mode = 5
-
-[node name="Current Spectrum" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container" unique_id=293651500]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Current Spectrum" unique_id=1394390685]
-layout_mode = 2
-text = "Spectrum Map"
-horizontal_alignment = 1
-
-[node name="Spectrum" type="TextureRect" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Current Spectrum" unique_id=202480727]
-texture_filter = 1
-custom_minimum_size = Vector2(256, 0)
-layout_mode = 2
-texture = SubResource("Texture2DRD_21h3a")
-expand_mode = 5
-
-[node name="Normals" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container" unique_id=383130055]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Normals" unique_id=969452723]
-layout_mode = 2
-text = "Normal Map"
-horizontal_alignment = 1
-
-[node name="Normals" type="TextureRect" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Upper Container/Normals" unique_id=509893100]
-texture_filter = 1
-custom_minimum_size = Vector2(256, 0)
-layout_mode = 2
-texture = SubResource("Texture2DRD_21h3a")
-expand_mode = 5
-
-[node name="Lower Container" type="HBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container" unique_id=879074146]
-layout_mode = 2
-
-[node name="Displacement" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container" unique_id=2008683874]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Displacement" unique_id=1967313923]
-layout_mode = 2
-text = "Displacement Map"
-horizontal_alignment = 1
-
-[node name="Displacement" type="TextureRect" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Displacement" unique_id=1387736225]
-texture_filter = 1
-texture_repeat = 1
-custom_minimum_size = Vector2(256, 0)
-layout_mode = 2
-texture = SubResource("Texture2DRD_sjp6b")
-expand_mode = 5
-
-[node name="Gradients" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container" unique_id=778673640]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Gradients" unique_id=961925520]
-layout_mode = 2
-text = "Gradient Map"
-horizontal_alignment = 1
-
-[node name="Gradients" type="TextureRect" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Gradients" unique_id=2025082826]
-texture_filter = 1
-custom_minimum_size = Vector2(256, 0)
-layout_mode = 2
-texture = SubResource("Texture2DRD_2ot2b")
-expand_mode = 5
-
-[node name="Foam" type="VBoxContainer" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container" unique_id=1352210996]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Foam" unique_id=1232060367]
-layout_mode = 2
-text = "Foam Map"
-horizontal_alignment = 1
-
-[node name="Foam" type="TextureRect" parent="Debug/CanvasLayer/VBoxContainer/Texture Container/Lower Container/Foam" unique_id=531979992]
-custom_minimum_size = Vector2(256, 0)
-layout_mode = 2
-texture = SubResource("Texture2DRD_2ot2b")
-expand_mode = 5
-
-[node name="Button Container" type="HBoxContainer" parent="Debug/CanvasLayer/VBoxContainer" unique_id=274469634]
-auto_translate_mode = 1
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Debug/CanvasLayer/VBoxContainer/Button Container" unique_id=456224159]
-layout_mode = 2
-text = "Debug Render Mode:"
-
-[node name="OptionButton" type="OptionButton" parent="Debug/CanvasLayer/VBoxContainer/Button Container" unique_id=1611258477]
-layout_mode = 2
-selected = 0
-item_count = 4
-popup/item_0/text = "Off"
-popup/item_0/id = 0
-popup/item_1/text = "Displacement"
-popup/item_1/id = 1
-popup/item_2/text = "Normals"
-popup/item_2/id = 2
-popup/item_3/text = "Gradients"
-popup/item_3/id = 3
-
 [node name="Visual Controls" type="Window" parent="." unique_id=663455485]
 oversampling_override = 1.0
 title = "Visual Controls"
@@ -250,6 +104,13 @@ visible = false
 content_scale_size = Vector2i(775, 608)
 content_scale_mode = 2
 content_scale_aspect = 4
+
+[node name="Debug Controls" type="Window" parent="." unique_id=1242321583]
+oversampling_override = 1.0
+title = "Debug Controls"
+position = Vector2i(1133, 67)
+size = Vector2i(775, 608)
+visible = false
 
 [node name="Water Controls" type="Window" parent="." unique_id=809034799]
 oversampling_override = 1.0
@@ -272,15 +133,17 @@ environment = SubResource("Environment_6kuhc")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=1967441659]
 transform = Transform3D(-0.9993919, 0.013411786, 0.03221955, -8.070968e-08, -0.9232092, 0.38429508, 0.034899566, 0.3840608, 0.9226473, 0, 6.89, 0)
 
-[node name="Water" type="MeshInstance3D" parent="." unique_id=1393861654 node_paths=PackedStringArray("Camera", "visualsWindow", "visualsWindowToggle")]
+[node name="Water" type="MeshInstance3D" parent="." unique_id=1393861654 node_paths=PackedStringArray("Camera", "debugWindow", "debugWindowToggle", "visualsWindow", "visualsWindowToggle")]
 mesh = SubResource("PlaneMesh_21h3a")
 script = ExtResource("6_epyer")
 Subdivide = Vector2i(1024, 1024)
 Size = Vector2(2000, 2000)
 Camera = NodePath("../Camera3D")
+debugWindow = NodePath("../Debug Controls")
+debugWindowToggle = NodePath("../CanvasLayer/VBoxContainer/Debug View")
 visualsWindow = NodePath("../Visual Controls")
 visualsWindowToggle = NodePath("../CanvasLayer/VBoxContainer/Visual Controls")
-ScatterColor = Color(0, 0.77254903, 0.39215687, 1)
+ScatterColor = Color(0, 0.4, 0.2, 1)
 BubbleColor = Color(0.047058824, 0.101960786, 0.1882353, 1)
 WaterColor = Color(0.039215688, 0.101960786, 0.21568628, 1)
 HeightScale = 3.14
@@ -291,20 +154,10 @@ BubbleDensity = 2.61
 
 [node name="WaterController" type="Node" parent="Water" unique_id=1829685482 node_paths=PackedStringArray("controlWindow", "controlWindowToggle")]
 script = ExtResource("8_6y65k")
-spectrum = 4
-_depth = 1000.0
-_windSpeed = 25.0
-_fetch = 80000.0
+_windSpeed = 21.11
 tessendorfAttenuation = 0.08
-spread = 4
-_spreadingStrength = 0.7
 _swell = 0.5
 controlWindow = NodePath("../../Water Controls")
 controlWindowToggle = NodePath("../../CanvasLayer/VBoxContainer/Water Controls")
 numCascades = 4
-
-[connection signal="toggled" from="CanvasLayer/VBoxContainer/Debug View" to="Debug" method="set_visible"]
-[connection signal="toggled" from="CanvasLayer/VBoxContainer/Water Controls" to="Water Controls" method="set_visible"]
-[connection signal="close_requested" from="Debug" to="Debug" method="hide"]
-[connection signal="close_requested" from="Debug" to="CanvasLayer/VBoxContainer/Debug View" method="set_pressed" binds= [false]]
-[connection signal="item_selected" from="Debug/CanvasLayer/VBoxContainer/Button Container/OptionButton" to="Debug" method="DebugRenderControl"]
+TileLengths = Array[float]([2048.0, 370.0, 80.0, 17.0])

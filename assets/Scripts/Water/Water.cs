@@ -84,12 +84,12 @@ public partial class Water : MeshInstance3D {
 		wave_tex = new Texture2Drd();
 		textureGen = sumOfSinesShader.GetKernel("textureGen");
 		textureGenAdv = sumOfSinesShader.GetKernel("textureGenAdv");
-		FSLTexture waveTex = textureGen.GetTexture("waveTexture");
-		waveTex.Set2DTexture(WaveCount, 2);
+		FSLTexture2D waveTex = textureGen.GetTexture2D("waveTexture");
+		waveTex.SetTexture(WaveCount, 2);
 		textureGenAdv.AssignResource(waveTex, "waveTexture");
 		
 		_waveTexCallback = Callable.From<Rid>(wave_tex_callback_func);
-		waveTex.BindCallback(_waveTexCallback);
+		waveTex.ConnectAndCall(_waveTexCallback);
 		
 		_material = SumOfSinesTextureMat;
 		GenerateSineWaves();

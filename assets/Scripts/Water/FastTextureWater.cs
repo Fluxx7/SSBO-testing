@@ -1,11 +1,12 @@
 using System;
-using System.Runtime.CompilerServices;
 using Godot;
+using Godot.Collections;
 
 namespace GodotWaterRendering.assets.Scripts.Utility;
 
 public partial class FastTextureWater : MeshInstance3D {
 	private ShaderMaterial _shader;
+	private Shader _debugTexShader;
 	[Export] public Vector2I Subdivide = new(256, 256);
 	[Export] public Vector2 Size = new(500f,500f);
 	private Vector2I _prevSubdivide;
@@ -17,6 +18,7 @@ public partial class FastTextureWater : MeshInstance3D {
 	[Export] private Button visualsWindowToggle;
 	private float _prevCameraFov;
 	private bool _simulate = true;
+	private SpinBox layerSelector = new();
 	private FastWaterController waterController;
 
 	#region shaderparams
@@ -113,6 +115,7 @@ public partial class FastTextureWater : MeshInstance3D {
 	#endregion
 	private float _currentSeed;
 	private float _time;
+	private Dictionary<StringName, ShaderMaterial> _debugRectShaderMats = new();
 
 	public void UpdateProperty(Variant value, StringName property) {
 		switch (property) {
@@ -135,18 +138,27 @@ public partial class FastTextureWater : MeshInstance3D {
 
 	private void OnWaterControllerTextureUpdate(StringName texture_name, Texture2DArrayRD tex_rd) {
 		_shader?.SetShaderParameter(texture_name, tex_rd);
+		if (_debugRectShaderMats.TryGetValue(texture_name, out ShaderMaterial shaderMat)) {
+			shaderMat.SetShaderParameter("debug_tex", tex_rd);
+		}
+		
 	}
 	
 	public override void _Ready() {
 		if (Engine.IsEditorHint()) {
 			_simulate = false;
 		}
+
+		_debugTexShader = GD.Load<Shader>("res://assets/Shaders/debug_texture.gdshader");
 		_shader = new ShaderMaterial();
 		_shader.SetShader(GD.Load<Shader>("res://assets/Shaders/jonswap_water.gdshader"));
 		
 		waterController = GetNode<FastWaterController>("WaterController");
 		waterController.TextureRidUpdated += OnWaterControllerTextureUpdate;
-		waterController.CascadeCountChanged += cascades => _shader?.SetShaderParameter("cascade_count", cascades);
+		waterController.CascadeCountChanged += cascades => {
+			layerSelector.MaxValue = cascades - 1;
+			_shader?.SetShaderParameter("cascade_count", cascades);
+		};
 		waterController.TileLengthsChanged += lengths => _shader?.SetShaderParameter("tileLengths", lengths);
 		waterController.PostTextures();
 		
@@ -160,6 +172,7 @@ public partial class FastTextureWater : MeshInstance3D {
 		_shader.SetShaderParameter("air_bubble_density", BubbleDensity);
 		_shader.SetShaderParameter("tileLengths", waterController.TileLengths);
 		_shader.SetShaderParameter("cascade_count", waterController.numCascades);
+		layerSelector.MaxValue = waterController.numCascades - 1;
 		
 		if (debugWindow != null && debugWindowToggle != null) {
 			InitDebugWindow();
@@ -217,11 +230,117 @@ public partial class FastTextureWater : MeshInstance3D {
 
 		return newContainer;
 	}
+
+	private VBoxContainer CreateDebugTexColorRect(StringName label, StringName tex_name) {
+		var mainContainer = new VBoxContainer();
+
+		var newLabel = new Label();
+		newLabel.Text = label;
+		newLabel.HorizontalAlignment = HorizontalAlignment.Center;
+		
+		mainContainer.AddChild(newLabel);
+		
+		var newRect = new ColorRect();
+		var shaderMat = new ShaderMaterial();
+		shaderMat.SetShader(_debugTexShader);
+		_debugRectShaderMats[tex_name] = shaderMat;
+		newRect.Material = shaderMat;
+		newRect.CustomMinimumSize = new Vector2(256f, 256f);
+
+		mainContainer.AddChild(newRect);
+		return mainContainer;
+	}
 	
 	private void InitDebugWindow() {
+		var canvasLayer = new CanvasLayer();
+		var mainBox = new VBoxContainer();
+		var texBox = new VBoxContainer();
+		var buttonBox = new HBoxContainer();
+
+		var upperBox = new HBoxContainer();
+		var lowerBox = new HBoxContainer();
 		
+		upperBox.AddChild(CreateDebugTexColorRect("Initial Spectrum Map", "baseSpectrum"));
+		upperBox.AddChild(CreateDebugTexColorRect("Spectrum Map", "spectrumTexture"));
+		upperBox.AddChild(CreateDebugTexColorRect("Displacement Map", "heightMaps"));
+		lowerBox.AddChild(CreateDebugTexColorRect("Gradient Map", "gradientMaps"));
+		lowerBox.AddChild(CreateDebugTexColorRect("Foam Map", "foamMaps"));
+		lowerBox.Alignment = BoxContainer.AlignmentMode.Center;
+		waterController?.PostTextures();
+		
+		texBox.AddChild(upperBox);
+		texBox.AddChild(lowerBox);
+
+		var newLabel = new Label();
+		newLabel.Text = "Debug Render Mode:";
+
+		var newBox = new HBoxContainer();
+		newBox.AddChild(newLabel);
+
+		var newButton = new OptionButton();
+		newButton.AddItem("Off");
+		newButton.AddItem("Displacement");
+		newButton.AddItem("Gradients");
+		newButton.Selected = 0;
+		newButton.ItemSelected += index => _shader?.SetShaderParameter("debugRender", index);
+		
+		newBox.AddChild(newButton);
+		var vBox = new HBoxContainer();
+		vBox.Alignment = BoxContainer.AlignmentMode.Center;
+		vBox.AddChild(newBox);
+
+		newBox = new HBoxContainer();
+		newLabel = new Label();
+		newLabel.Text = "Displayed Cascade:";
+		
+		newBox.AddChild(newLabel);
+		
+		layerSelector.Step = 1.0;
+		layerSelector.MinValue = 0.0;
+		layerSelector.ValueChanged += value => {
+			_shader.SetShaderParameter("debugCascade", (int) value);
+			foreach (var (_ ,shader_mat) in _debugRectShaderMats) {
+				shader_mat.SetShaderParameter("debug_tex_index", (int) value);
+				
+			}
+		}; 
+		
+		newBox.AddChild(layerSelector);
+		vBox.AddChild(newBox);
+		buttonBox.AddChild(vBox);
+		
+		
+		mainBox.AddChild(texBox);
+		mainBox.AddChild(buttonBox);
+		
+		canvasLayer.AddChild(mainBox);
+		debugWindow.AddChild(canvasLayer);
+		debugWindowToggle.Toggled += on => debugWindow.SetVisible(on);
+		debugWindow.CloseRequested += () => debugWindowToggle.SetPressed(false);
+		debugWindow.SetVisible(false);
+		debugWindowToggle.SetPressed(false);
 	}
 
+	private HBoxContainer createFloatSelector(string text, float starting_value, StringName uniform_name, float min_val = 0f, float max_val = 100f, float step = 1f, bool allow_greater = false) {
+		var newContainer = new HBoxContainer();
+		var colorLabel = new Label();
+		colorLabel.Text = text;
+		
+		var valueSelector = new SpinBox();
+		valueSelector.MinValue = min_val;
+		valueSelector.MaxValue = max_val;
+		valueSelector.AllowGreater = allow_greater;
+		valueSelector.Step = step;
+		valueSelector.Value = starting_value;
+		valueSelector.ValueChanged += (new_val) => {
+			_shader?.SetShaderParameter(uniform_name, new_val);
+		};
+		
+		newContainer.AddChild(colorLabel);
+		newContainer.AddChild(valueSelector);
+		return newContainer;
+	}
+	
 	private void InitVisualsWindow() {
 		var canvasLayer = new CanvasLayer();
 		var visualControlsBox = new VBoxContainer();
@@ -240,6 +359,11 @@ public partial class FastTextureWater : MeshInstance3D {
 		colorParametersBox.AddChild(waterColorControls);
 		colorParametersBox.AddChild(bubbleColorControls);
 		colorParametersBox.AddChild(scatterColorControls);
+		colorParametersBox.AddChild(createFloatSelector("Height Scale", _heightScale, "height_scale", 0f, 50f, 0.01f, true));
+		colorParametersBox.AddChild(createFloatSelector("K2", _k2, "k2", 0f, 20f, 0.01f, true));
+		colorParametersBox.AddChild(createFloatSelector("K3", _k3, "k3", 0f, 20f, 0.01f, true));
+		colorParametersBox.AddChild(createFloatSelector("K4", _k4, "k4", 0f, 20f, 0.01f, true));
+		colorParametersBox.AddChild(createFloatSelector("Bubble Density", _bubbleDensity, "air_bubble_density", 0f, 20f, 0.01f, true));
 
 		{
 			var lightingLabel = new Label();
