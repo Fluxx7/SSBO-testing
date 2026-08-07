@@ -5,6 +5,10 @@ const float g = 9.81;
 const float water_surface_tension = 0.074;
 const float water_density = 1000.0;
 
+
+const uint halfN = 128;
+const uint N = halfN * 2;
+
 float2 complex_mult(float2 a, float2 b) {
     return float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
 }
@@ -36,7 +40,7 @@ layout(std430) buffer oceanParams {
 	float windDirection;
 	float depth;
 	float fetch;
-	float tileLengths[];
+	float4[] cascadeParams; // [tile length, whitecap, foam amount, unused]
 } paramsBuffer;
 
 layout(std430) buffer spectrumDataBuffer {

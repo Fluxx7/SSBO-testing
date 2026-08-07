@@ -6,9 +6,7 @@ global uniform vec3 camera_coords;
 #define MAX_CASCADES 4
 
 uniform sampler2DArray heightMaps : filter_linear_mipmap_anisotropic;
-uniform sampler2DArray gradientMaps : filter_linear_mipmap_anisotropic;
-uniform sampler2DArray foamMaps : filter_linear_mipmap_anisotropic;
-uniform sampler2DArray normalMaps : filter_nearest_mipmap_anisotropic;
+uniform sampler2DArray gradFoamMaps : filter_linear_mipmap_anisotropic;
 uniform float tileLengths[MAX_CASCADES];
 uniform int cascade_count = 4;
 
@@ -46,15 +44,15 @@ varying float wave_height;
 varying float foam_factor;
 void fragment() {
 	float dist = length(VERTEX.xz);
-	vec2 gradientSample = vec2(0);
-	float foamSample = 0.0;
+	vec3 gradFoamSample = vec3(0);
 	wave_height = 0.0;
 	for (int cascade = 0; cascade < cascade_count; cascade++) {
-		gradientSample += texture(gradientMaps, vec3(coords[cascade], float(cascade))).rb;
-		foamSample += texture(foamMaps, vec3(coords[cascade], float(cascade))).x;
+		gradFoamSample += texture(gradFoamMaps, vec3(coords[cascade], float(cascade))).rgb;
 		wave_height += v_displacement;
-		
 	}
+	
+	vec2 gradientSample = gradFoamSample.xz;
+	float foamSample = gradFoamSample.y;
 	 
 	foam_factor = 0.0;
 	if (renderFoam) {
@@ -80,11 +78,13 @@ void fragment() {
 			ROUGHNESS = 1.0;
 			SPECULAR = 0.0;
 			break;
-		case 2: // Gradients
-			ALBEDO = texture(gradientMaps, vec3(coords[debugCascade], float(debugCascade))).rgb * exp(-dist*0.00075);
+		case 2: { // Gradients
+			vec4 gradFoamDebugSample = texture(gradFoamMaps, vec3(coords[debugCascade], float(debugCascade)));
+			ALBEDO = vec3(gradFoamDebugSample.r, 0.0, gradFoamDebugSample.b) * exp(-dist*0.00075);
 			ROUGHNESS = 1.0;
 			SPECULAR = 0.0;
 			break;
+		}
 	}
 }
 

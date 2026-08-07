@@ -8,6 +8,6 @@ kernel[1, 1, 1] updateParams(uint numCascades, float windSpeed, float windDirect
 	paramsBuffer.fetch = fetch;
 }
 
-kernel[1, 1, 1] updateTileLength(uint tileLengthIndex, float tileLength) {
-	paramsBuffer.tileLengths[tileLengthIndex] = tileLength;
+kernel[1, 1, 1] updateCascadeParam(uint cascade_index, float param_x, float param_y, float param_z) {
+	paramsBuffer.cascadeParams[cascade_index] = float4(param_x, param_y, param_z, 1.0);
 }

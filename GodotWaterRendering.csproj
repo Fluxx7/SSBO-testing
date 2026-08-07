@@ -6,6 +6,7 @@
   <ItemGroup>
     <Content Include="assets\.DS_Store" />
     <Content Include="assets\Shaders\Compute\FSL\fft_optim.fsl" />
+    <Content Include="assets\Shaders\Compute\FSL\mipmaps.fsl" />
     <Content Include="assets\Shaders\Compute\FSL\old\fft.fsl" />
     <Content Include="assets\Shaders\Compute\FSL\old\tessendorf_funcs.fsl" />
     <Content Include="assets\Shaders\Compute\FSL\shared_resources.fsl" />

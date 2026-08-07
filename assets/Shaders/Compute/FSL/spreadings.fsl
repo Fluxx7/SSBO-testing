@@ -2,13 +2,14 @@
 
 layout(rgba32f) uniform image2DArray spectrumCoefficients;
 
-kernel[32, 32, 1] noSpreading(g_id : GlobalInvocationID, int texSize, float strength) {
-    if (g_id.x >= texSize) return;
-    if (g_id.y >= texSize) return;
+kernel[32, 32, 1] noSpreading(g_id : GlobalInvocationID, float strength) {
+    if (g_id.x >= N) return;
+    if (g_id.y >= N) return;
     if (g_id.z >= paramsBuffer.numCascades) return;
+    const int texSize = int(N);
     int2 id = int2(g_id.xy);
     const int cascade_index = int(g_id.z);
-    const float tile_length = paramsBuffer.tileLengths[cascade_index];
+    const float tile_length = paramsBuffer.cascadeParams[cascade_index].x;
 
     float base_sample = imageLoad(spectrumMap, int3(id, cascade_index)).r;
     float2 coeffs = imageLoad(spectrumCoefficients, int3(id, cascade_index)).rg;
@@ -29,13 +30,14 @@ float positive_cos_spreading(float2 k_vec, float windDirection) {
     return 2.0 * pow(cos(theta), 2.0) / PI;
 }
 
-kernel[32, 32, 1] positiveCosSpreading(g_id : GlobalInvocationID, int texSize, float strength) {
-    if (g_id.x >= texSize) return;
-    if (g_id.y >= texSize) return;
+kernel[32, 32, 1] positiveCosSpreading(g_id : GlobalInvocationID, float strength) {
+    if (g_id.x >= N) return;
+    if (g_id.y >= N) return;
     if (g_id.z >= paramsBuffer.numCascades) return;
+    const int texSize = int(N);
     int2 id = int2(g_id.xy);
     const int cascade_index = int(g_id.z);
-	const float tile_length = paramsBuffer.tileLengths[cascade_index];
+	const float tile_length = paramsBuffer.cascadeParams[cascade_index].x;
 
     float base_sample = imageLoad(spectrumMap, int3(id, cascade_index)).r;
     float2 coeffs = imageLoad(spectrumCoefficients, int3(id, cascade_index)).rg;
@@ -59,14 +61,14 @@ float mitsuyasu_spreading(float2 k_vec, float windDirection) {
 	return 0.0;
 }
 
-kernel[32, 32, 1] mitsuyasuSpreading(g_id : GlobalInvocationID, int texSize, float strength) {
-	if (g_id.x >= texSize) return;
-	if (g_id.y >= texSize) return;
+kernel[32, 32, 1] mitsuyasuSpreading(g_id : GlobalInvocationID, float strength) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
 	if (g_id.z >= paramsBuffer.numCascades) return;
-	
+	const int texSize = int(N);
 	int2 id = int2(g_id.xy);
 	const int cascade_index = int(g_id.z);
-	const float tile_length = paramsBuffer.tileLengths[cascade_index];
+	const float tile_length = paramsBuffer.cascadeParams[cascade_index].x;
 	
 	float base_sample = imageLoad(spectrumMap, int3(id, cascade_index)).r;
 	float2 coeffs = imageLoad(spectrumCoefficients, int3(id, cascade_index)).rg;
@@ -109,13 +111,14 @@ float donelan_banner_spreading(float2 k_vec, float omega_peak, float depth, floa
 	
 }
 
-kernel[32, 32, 1] donelanBannerSpreading(g_id : GlobalInvocationID, int texSize, float strength) {
-	if (g_id.x >= texSize) return;
-	if (g_id.y >= texSize) return;
+kernel[32, 32, 1] donelanBannerSpreading(g_id : GlobalInvocationID, float strength) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
 	if (g_id.z >= paramsBuffer.numCascades) return;
+	const int texSize = int(N);
 	int2 id = int2(g_id.xy);
 	const int cascade_index = int(g_id.z);
-	const float tile_length = paramsBuffer.tileLengths[cascade_index];
+	const float tile_length = paramsBuffer.cascadeParams[cascade_index].x;
 
 	float base_sample = imageLoad(spectrumMap, int3(id, cascade_index)).r;
 	float2 coeffs = imageLoad(spectrumCoefficients, int3(id, cascade_index)).rg;

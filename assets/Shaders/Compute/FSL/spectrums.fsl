@@ -1,5 +1,13 @@
 #include "shared_resources.fsl"
 
+float gamma_function() {
+	return 0.0;
+}
+
+float get_kmag(int2 id, int cascade_index, int texSize, float tile_length) {
+	return length(2.0 * PI * (id - texSize * 0.5) / tile_length);
+}
+
 float tessendorf_spectrum(float A, float k, float windSpeed) {
     float kRcp = 0.0;
     if (k > 1e-6) {
@@ -8,27 +16,30 @@ float tessendorf_spectrum(float A, float k, float windSpeed) {
     return A * exp( -1.0f * g * g / pow(windSpeed, 4.0) * kRcp * kRcp) * pow(kRcp, 4.0);
 }
 
-kernel[32, 32, 1] tessendorfSpectrum(g_id : GlobalInvocationID, int texSize, float A) {
-	if (g_id.x >= texSize) return;
-	if (g_id.y >= texSize) return;
+kernel[32, 32, 1] tessendorfSpectrum(g_id : GlobalInvocationID, float A) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
 	if (g_id.z >= paramsBuffer.numCascades) return;
+	
+	const int texSize = int(N);
 	int2 id = int2(g_id.xy);
 	const int cascade_index = int(g_id.z);
+	const float tile_length = paramsBuffer.cascadeParams[cascade_index].x;
 
-	float2 k_vec = 2.0 * PI * (id - texSize * 0.5) / paramsBuffer.tileLengths[cascade_index];
-	float k = length(k_vec);
+	float k = get_kmag(id, cascade_index, texSize, tile_length);
 	imageStore(spectrumMap, int3(id, cascade_index), float4(tessendorf_spectrum(A, k, paramsBuffer.windSpeed), 0.0, 0.0, 1.0));
 }
 
-kernel[32, 32, 1] attenuatedTessendorfSpectrum(g_id : GlobalInvocationID, int texSize, float A, float l) {
-	if (g_id.x >= texSize) return;
-	if (g_id.y >= texSize) return;
+kernel[32, 32, 1] attenuatedTessendorfSpectrum(g_id : GlobalInvocationID, float A, float l) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
 	if (g_id.z >= paramsBuffer.numCascades) return;
+	const int texSize = int(N);
 	int2 id = int2(g_id.xy);
 	const int cascade_index = int(g_id.z);
+	const float tile_length = paramsBuffer.cascadeParams[cascade_index].x;
 
-	float2 k_vec = 2.0 * PI * (id - texSize * 0.5) / paramsBuffer.tileLengths[cascade_index];
-	float k = length(k_vec);
+	float k = get_kmag(id, cascade_index, texSize, tile_length);
 	float attenuation = exp(-(k * k) * (l * l));
 	imageStore(spectrumMap, int3(id, cascade_index), float4(tessendorf_spectrum(A, k, paramsBuffer.windSpeed) * attenuation, 0.0, 0.0, 1.0));
 }
@@ -54,15 +65,17 @@ float a_b_spectrum(float omega, float A, float B) {
     return first_term * second_term;
 }
 
-kernel[32, 32, 1] abSpectrum(g_id : GlobalInvocationID, int texSize, float A, float B) {
-	if (g_id.x >= texSize) return;
-	if (g_id.y >= texSize) return;
+kernel[32, 32, 1] abSpectrum(g_id : GlobalInvocationID, float A, float B) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
 	if (g_id.z >= paramsBuffer.numCascades) return;
+	
+	const int texSize = int(N);
 	int2 id = int2(g_id.xy);
 	const int cascade_index = int(g_id.z);
+	const float tile_length = paramsBuffer.cascadeParams[cascade_index].x;
 
-	float2 k_vec = 2.0 * PI * (id - texSize * 0.5) / paramsBuffer.tileLengths[cascade_index];
-	float k_mag = length(k_vec);
+	float k_mag = get_kmag(id, cascade_index, texSize, tile_length);
 	float tan_k = 0.0;
 	float omega = dispersion_relation(k_mag, paramsBuffer.depth, tan_k);
 	imageStore(spectrumMap, int3(id, cascade_index), float4(a_b_spectrum(omega, A, B) * dphi_dk(k_mag, omega, paramsBuffer.depth, tan_k), 0.0, 0.0, 1.0));
@@ -82,20 +95,24 @@ float2 jonswap_spectrum(float omega, float windSpeed, float fetch) {
     return float2(a_b_spectrum(omega, A, B) * pow(peak_enhancement, r), omega_peak);
 }
 
-kernel[32, 32, 1] jonswapSpectrum(g_id : GlobalInvocationID, int texSize) {
-    if (g_id.x >= texSize) return;
-    if (g_id.y >= texSize) return;
+kernel[32, 32, 1] jonswapSpectrum(g_id : GlobalInvocationID) {
+    if (g_id.x >= N) return;
+    if (g_id.y >= N) return;
     if (g_id.z >= paramsBuffer.numCascades) return;
+    const int texSize = int(N);
     int2 id = int2(g_id.xy);
     const int cascade_index = int(g_id.z);
+    const float tile_length = paramsBuffer.cascadeParams[cascade_index].x;
 
-    float2 k_vec = 2.0 * PI * (id - texSize * 0.5) / paramsBuffer.tileLengths[cascade_index];
-    float k_mag = length(k_vec);
+    float k_mag = get_kmag(id, cascade_index, texSize, tile_length);
     float tan_k = 0.0;
     float omega = dispersion_relation(k_mag, paramsBuffer.depth, tan_k);
     float2 jonswap_results = jonswap_spectrum(omega, paramsBuffer.windSpeed, paramsBuffer.fetch);
     spectrumData.omega_peak = jonswap_results.y;
-    imageStore(spectrumMap, int3(id, cascade_index), float4(jonswap_results.x * dphi_dk(k_mag, omega, paramsBuffer.depth, tan_k), 0.0, 0.0, 1.0));
+    imageStore(spectrumMap, 
+    	int3(id, cascade_index), 
+    	float4(jonswap_results.x * dphi_dk(k_mag, omega, paramsBuffer.depth, tan_k), 
+    	0.0, 0.0, 1.0));
 }
 
 
@@ -111,18 +128,24 @@ float depth_attenuation(float omega, float depth) {
     }
 }
 
-kernel[32, 32, 1] tmaSpectrum(g_id : GlobalInvocationID, int texSize) {
-    if (g_id.x >= texSize) return;
-    if (g_id.y >= texSize) return;
+kernel[32, 32, 1] tmaSpectrum(g_id : GlobalInvocationID) {
+    if (g_id.x >= N) return;
+    if (g_id.y >= N) return;
     if (g_id.z >= paramsBuffer.numCascades) return;
+    
+    const int texSize = int(N);
     int2 id = int2(g_id.xy);
     const int cascade_index = int(g_id.z);
+    const float tile_length = paramsBuffer.cascadeParams[cascade_index].x;
 
-    float2 k_vec = 2.0 * PI * (id - texSize * 0.5) / paramsBuffer.tileLengths[cascade_index];
-    float k_mag = length(k_vec);
+    float k_mag = get_kmag(id, cascade_index, texSize, tile_length);
     float tan_k = 0.0;
     float omega = dispersion_relation(k_mag, paramsBuffer.depth, tan_k);
-    float2 tma_results = jonswap_spectrum(omega, paramsBuffer.windSpeed, paramsBuffer.fetch) * depth_attenuation(omega, paramsBuffer.depth);
+    float2 tma_results = jonswap_spectrum(omega, paramsBuffer.windSpeed, paramsBuffer.fetch) 
+    					* depth_attenuation(omega, paramsBuffer.depth);
 	spectrumData.omega_peak = tma_results.y;
-    imageStore(spectrumMap, int3(id, cascade_index), float4(tma_results.x * dphi_dk(k_mag, omega, paramsBuffer.depth, tan_k), 0.0, 0.0, 1.0));
+    imageStore(spectrumMap, 
+    	int3(id, cascade_index), 
+    	float4(tma_results.x * dphi_dk(k_mag, omega, paramsBuffer.depth, tan_k), 
+    	0.0, 0.0, 1.0));
 }

@@ -19,40 +19,41 @@ to make this easier, the macro fft_index handles everything automatically.
 the arguments are the x coordinate, the y coordinate, and then which of the two arrays to access 
 */
 layout(std430) buffer fft1_buffers {
-    float2 fft1_data[];
+    float2[] fft1_data;
 };
 #define fft1_index(x, y) fft1_data[(cascade_index * texSize + y ) * texSize + x ] 
 #define fft1_vindex(v) fft1_index(v.x, v.y)
 
 layout(std430) buffer fft2_buffers {
-    float2 fft2_data[];
+    float2[] fft2_data;
 };
 
 #define fft2_index(x, y) fft2_data[(cascade_index * texSize + y ) * texSize + x ] 
 #define fft2_vindex(v) fft2_index(v.x, v.y)
 
 layout(std430) buffer fft3_buffers {
-    float2 fft3_data[];
+    float2[] fft3_data;
 };
 
 #define fft3_index(x, y) fft3_data[(cascade_index * texSize + y ) * texSize + x ] 
 #define fft3_vindex(v) fft3_index(v.x, v.y)
 
 layout(std430) buffer fft4_buffers {
-    float2 fft4_data[];
+    float2[] fft4_data;
 };
 
 #define fft4_index(x, y) fft4_data[(cascade_index * texSize + y ) * texSize + x ] 
 #define fft4_vindex(v) fft4_index(v.x, v.y)
 
-kernel[8, 8, 1] updateSpectrum(g_id : GlobalInvocationID, int texSize, float time) {
-	if (g_id.x >= texSize) return;
-	if (g_id.y >= texSize) return;
+kernel[8, 8, 1] updateSpectrum(g_id : GlobalInvocationID, float time) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
 	if (g_id.z >= paramsBuffer.numCascades) return;
+	const int texSize = int(N);
 	const int2 id = int2(g_id.xy);
 	const int cascade_index = int(g_id.z);
 	const float2 j = float2(0.0, 1.0);
-	const float tile_length = paramsBuffer.tileLengths[cascade_index];
+	const float tile_length = paramsBuffer.cascadeParams[cascade_index].x;
 	const float depth = paramsBuffer.depth;
 
 	float coeff = 2.0 * PI / tile_length;
@@ -99,13 +100,13 @@ kernel[8, 8, 1] updateSpectrum(g_id : GlobalInvocationID, int texSize, float tim
 
 
 layout(rgba16f) uniform image2DArray heightTexture;
-layout(rgba16f) uniform image2DArray gradientTexture;
-layout(rgba16f) uniform image2DArray foamTexture;
+layout(rgba16f) uniform image2DArray gradFoamTexture;
 
-kernel[8, 8, 1] ifftUnpack(g_id : GlobalInvocationID, int texSize, float foam_grow_rate, float foam_decay_rate, float whitecap) {
-	if (g_id.x >= texSize) return;
-	if (g_id.y >= texSize) return;
+kernel[8, 8, 1] ifftUnpack(g_id : GlobalInvocationID, float deltaTime) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
 	if (g_id.z >= paramsBuffer.numCascades) return;
+	const int texSize = int(N);
 	int2 id = int2(g_id.xy);
 	const int cascade_index = int(g_id.z);
 	
@@ -121,21 +122,23 @@ kernel[8, 8, 1] ifftUnpack(g_id : GlobalInvocationID, int texSize, float foam_gr
 	float dx_dx = fft4_sample.x * sign_shift;
 	float dz_dz = fft4_sample.y * sign_shift;
 
-	gradients = gradients / (1.0 + abs(vec2(dx_dx, dz_dz)));
+	gradients = gradients / (1.0 + abs(float2(dx_dx, dz_dz)));
 	
 	imageStore(heightTexture, int3(id, cascade_index), float4(displacement * sign_shift, 1.0));
-	imageStore(gradientTexture, int3(id, cascade_index), float4(gradients.x, 0.0, gradients.y, 1.0) );
 
 	float jacobian = (dx_dx + 1.0) * (dz_dz + 1.0) - dx_dz * dx_dz;
 
+	const float whitecap = paramsBuffer.cascadeParams[cascade_index].y;
+	const float foam_amount = paramsBuffer.cascadeParams[cascade_index].z;
+	const float foam_grow_rate = foam_amount * deltaTime * 7.5;
+	const float foam_decay_rate = deltaTime * max(0.5, 10.0 - foam_amount) * 0.15;
+	
 	float foam_factor = -min(0.0, jacobian - whitecap);
-	float foam = imageLoad(foamTexture, int3(id, cascade_index)).x;
+	float foam = imageLoad(gradFoamTexture, int3(id, cascade_index)).y;
 	foam *= exp(-foam_decay_rate);
 	foam += foam_factor * foam_grow_rate;
 	foam = clamp(foam, 0.0f, 1.0f);
-	imageStore(foamTexture, int3(id, cascade_index), float4(foam, foam, foam, 1.0));
+	imageStore(gradFoamTexture, int3(id, cascade_index), float4(gradients.x, foam, gradients.y, 1.0));
 }
-
-
 
 

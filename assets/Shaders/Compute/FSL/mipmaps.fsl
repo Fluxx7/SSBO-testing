@@ -1,0 +1,15 @@
+layout(rgba16f) uniform image2DArray mipSource;
+layout(rgba16f) uniform image2DArray mipDest;
+
+kernel[16, 16, 1] genMipmaps(g_id : GlobalInvocationID, uint destSize) {
+	if (g_id.x >= destSize || g_id.y >= destSize) {
+		return;	
+	}
+	const int3 dest = int3(g_id);
+	const int3 src = int3(dest.xy * 2, dest.z);
+	float4 topLeft = imageLoad(mipSource, src);
+	float4 topRight = imageLoad(mipSource, src + int3(1, 0, 0));
+	float4 bottomLeft = imageLoad(mipSource, src + int3(0, 1, 0));
+	float4 bottomRight = imageLoad(mipSource, src + int3(1, 1, 0));
+	imageStore(mipDest, dest, (topLeft + topRight + bottomLeft + bottomRight) * 0.25);
+}

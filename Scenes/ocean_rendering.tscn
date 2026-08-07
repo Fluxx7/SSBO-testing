@@ -154,9 +154,13 @@ BubbleDensity = 2.61
 
 [node name="WaterController" type="Node" parent="Water" unique_id=1829685482 node_paths=PackedStringArray("controlWindow", "controlWindowToggle")]
 script = ExtResource("8_6y65k")
-_windSpeed = 21.11
+_depth = 200.0
+_windSpeed = 16.94
+_windDirection = 40.0
+_fetch = 250000.0
 tessendorfAttenuation = 0.08
-_swell = 0.5
+_spreadingStrength = 1.0
+_swell = 0.0
 controlWindow = NodePath("../../Water Controls")
 controlWindowToggle = NodePath("../../CanvasLayer/VBoxContainer/Water Controls")
 numCascades = 4

@@ -1,6 +1,7 @@
 using System;
 using Godot;
 using Godot.Collections;
+using Range = Godot.Range;
 
 namespace GodotWaterRendering.assets.Scripts.Utility;
 
@@ -19,6 +20,7 @@ public partial class FastTextureWater : MeshInstance3D {
 	private float _prevCameraFov;
 	private bool _simulate = true;
 	private SpinBox layerSelector = new();
+	private SpinBox mipSelector = new();
 	private FastWaterController waterController;
 
 	#region shaderparams
@@ -116,7 +118,7 @@ public partial class FastTextureWater : MeshInstance3D {
 	private float _currentSeed;
 	private float _time;
 	private Dictionary<StringName, ShaderMaterial> _debugRectShaderMats = new();
-
+	
 	public void UpdateProperty(Variant value, StringName property) {
 		switch (property) {
 			case "BubbleColor":
@@ -140,8 +142,15 @@ public partial class FastTextureWater : MeshInstance3D {
 		_shader?.SetShaderParameter(texture_name, tex_rd);
 		if (_debugRectShaderMats.TryGetValue(texture_name, out ShaderMaterial shaderMat)) {
 			shaderMat.SetShaderParameter("debug_tex", tex_rd);
+		} else if (texture_name == "gradFoamMaps") {
+			if (_debugRectShaderMats.TryGetValue("gradientMaps", out ShaderMaterial gradShaderMat)) {
+				gradShaderMat.SetShaderParameter("debug_tex", tex_rd);
+			}
+			if (_debugRectShaderMats.TryGetValue("foamMaps", out ShaderMaterial foamShaderMat)) {
+				foamShaderMat.SetShaderParameter("debug_tex", tex_rd);
+			}
 		}
-		
+
 	}
 	
 	public override void _Ready() {
@@ -265,6 +274,8 @@ public partial class FastTextureWater : MeshInstance3D {
 		upperBox.AddChild(CreateDebugTexColorRect("Displacement Map", "heightMaps"));
 		lowerBox.AddChild(CreateDebugTexColorRect("Gradient Map", "gradientMaps"));
 		lowerBox.AddChild(CreateDebugTexColorRect("Foam Map", "foamMaps"));
+		_debugRectShaderMats["gradientMaps"].SetShaderParameter("tex_type", 1);
+		_debugRectShaderMats["foamMaps"].SetShaderParameter("tex_type", 2);
 		lowerBox.Alignment = BoxContainer.AlignmentMode.Center;
 		waterController?.PostTextures();
 		
@@ -291,7 +302,7 @@ public partial class FastTextureWater : MeshInstance3D {
 
 		newBox = new HBoxContainer();
 		newLabel = new Label();
-		newLabel.Text = "Displayed Cascade:";
+		newLabel.Text = "Cascade:";
 		
 		newBox.AddChild(newLabel);
 		
@@ -306,6 +317,25 @@ public partial class FastTextureWater : MeshInstance3D {
 		}; 
 		
 		newBox.AddChild(layerSelector);
+		vBox.AddChild(newBox);
+		
+		newBox = new HBoxContainer();
+		newLabel = new Label();
+		newLabel.Text = "Mipmap Level:";
+		
+		newBox.AddChild(newLabel);
+		
+		
+		mipSelector.Step = 1.0;
+		mipSelector.MinValue = 0.0;
+		mipSelector.ValueChanged += value => {
+			foreach (var (_ ,shader_mat) in _debugRectShaderMats) {
+				shader_mat.SetShaderParameter("mip_level", (int) value);
+				
+			}
+		}; 
+		
+		newBox.AddChild(mipSelector);
 		vBox.AddChild(newBox);
 		buttonBox.AddChild(vBox);
 		
@@ -341,6 +371,24 @@ public partial class FastTextureWater : MeshInstance3D {
 		return newContainer;
 	}
 	
+	private HBoxContainer createFloatSelectorAction(string text, float starting_value, Range.ValueChangedEventHandler action, float min_val = 0f, float max_val = 100f, float step = 1f, bool allow_greater = false) {
+		var newContainer = new HBoxContainer();
+		var colorLabel = new Label();
+		colorLabel.Text = text;
+		
+		var valueSelector = new SpinBox();
+		valueSelector.MinValue = min_val;
+		valueSelector.MaxValue = max_val;
+		valueSelector.AllowGreater = allow_greater;
+		valueSelector.Step = step;
+		valueSelector.Value = starting_value;
+		valueSelector.ValueChanged += action;
+		
+		newContainer.AddChild(colorLabel);
+		newContainer.AddChild(valueSelector);
+		return newContainer;
+	}
+	
 	private void InitVisualsWindow() {
 		var canvasLayer = new CanvasLayer();
 		var visualControlsBox = new VBoxContainer();
@@ -359,12 +407,45 @@ public partial class FastTextureWater : MeshInstance3D {
 		colorParametersBox.AddChild(waterColorControls);
 		colorParametersBox.AddChild(bubbleColorControls);
 		colorParametersBox.AddChild(scatterColorControls);
-		colorParametersBox.AddChild(createFloatSelector("Height Scale", _heightScale, "height_scale", 0f, 50f, 0.01f, true));
-		colorParametersBox.AddChild(createFloatSelector("K2", _k2, "k2", 0f, 20f, 0.01f, true));
-		colorParametersBox.AddChild(createFloatSelector("K3", _k3, "k3", 0f, 20f, 0.01f, true));
-		colorParametersBox.AddChild(createFloatSelector("K4", _k4, "k4", 0f, 20f, 0.01f, true));
-		colorParametersBox.AddChild(createFloatSelector("Bubble Density", _bubbleDensity, "air_bubble_density", 0f, 20f, 0.01f, true));
 
+		var subParametersBox = new HBoxContainer();
+		
+		var shaderParamatersBox = new VBoxContainer();
+		{
+			var shaderParamLabel = new Label();
+			shaderParamLabel.Text = "Water Shader Parameters";
+			shaderParamatersBox.AddChild(shaderParamLabel);
+		}
+		shaderParamatersBox.AddChild(createFloatSelector("Height Scale", _heightScale, "height_scale", 0f, 50f, 0.01f, true));
+		shaderParamatersBox.AddChild(createFloatSelector("K2", _k2, "k2", 0f, 20f, 0.01f, true));
+		shaderParamatersBox.AddChild(createFloatSelector("K3", _k3, "k3", 0f, 20f, 0.01f, true));
+		shaderParamatersBox.AddChild(createFloatSelector("K4", _k4, "k4", 0f, 20f, 0.01f, true));
+		shaderParamatersBox.AddChild(createFloatSelector("Bubble Density", _bubbleDensity, "air_bubble_density", 0f, 20f, 0.01f, true));
+
+		var foamParamsTabs = new TabContainer(); 
+		{
+			for (var i = 0; i < FastWaterController.MAX_CASCADES; i++) {
+				var foamParametersBox = new VBoxContainer();
+				foamParametersBox.Name = $"Cascade {i}";
+				{
+					var foamParamLabel = new Label();
+					foamParamLabel.Text = "Foam Parameters";
+					foamParametersBox.AddChild(foamParamLabel);
+				}
+				var index = i;
+				foamParametersBox.AddChild(createFloatSelectorAction("Whitecap", 0.5f,
+					value => {waterController?.SetWhitecap(index, (float) value); }, 0f, 50f, 0.01f, true));
+				foamParametersBox.AddChild(createFloatSelectorAction("Foam Amount", 0.5f,
+					value => {waterController?.SetFoamAmount(index, (float) value); }, 0f, 50f, 0.01f, true));
+				foamParamsTabs.AddChild(foamParametersBox);
+			}
+		}
+		subParametersBox.AddChild(shaderParamatersBox);
+		subParametersBox.AddChild(foamParamsTabs);
+		
+		colorParametersBox.AddChild(subParametersBox);
+		
+		
 		{
 			var lightingLabel = new Label();
 			lightingLabel.Text = "Lighting Controls";
@@ -390,10 +471,15 @@ public partial class FastTextureWater : MeshInstance3D {
 			lightingControlsBox.AddChild(reflectionsButton);
 			lightingControlsBox.AddChild(foamButton);
 		}
-		
+		var mipsButton = new Button();
+		mipsButton.Text = "Use Mipmaps";
+		mipsButton.ToggleMode = true;
+		mipsButton.ButtonPressed = true;
+		mipsButton.Toggled += (pressed) => { waterController?.UseMips(pressed); };
 
 		visualControlsBox.AddChild(colorParametersBox);
 		visualControlsBox.AddChild(lightingControlsBox);
+		visualControlsBox.AddChild(mipsButton);
 		
 		canvasLayer.AddChild(visualControlsBox);
 		

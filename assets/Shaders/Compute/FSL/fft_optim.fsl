@@ -2,37 +2,34 @@
 //#define USE_NORMALIZATION
 
 layout(std430) buffer twiddleFactors {
-    float2 twiddles[];
+    float2[] twiddles;
 };
 
 
 // buffer shape:
 // [numCascades][2][N * N]
 layout(std430) buffer fft_buffers {
-    float2 fft_data[];
+    float2[] fft_data;
 };
 
 #define fft_index(x, y) fft_data[(cascade_index * N + y ) * N + x ] 
 #define fft_vindex(v) fft_index(v.x, v.y)
 
-#define FFT_SIZE 256
-#define FFT_SIZE_HALF 128
 
-
-kernel[32, 1, 1] twiddleGen(id : GlobalInvocationID, uint N) {
+kernel[32, 1, 1] twiddleGen(id : GlobalInvocationID) {
 	if (id.x >= (N / 2)) return;
 	uint x = id.x;
 	float theta = 2.0 * PI * float(x) / float(N);
-	twiddles[x] = float2(cos(theta), sin(theta));
+	twiddles[x] = exp_j(theta);
 }
 
-shared float2 local_twiddles[FFT_SIZE_HALF];
-shared float2 local_data[2][FFT_SIZE];
+shared float2[halfN] local_twiddles;
+shared float2[2][N] local_data;
 
 #define dest(ind) local_data[curr_dest][ind]
 #define source(ind) local_data[curr_source][ind]
 
-void ifft_stage(uint N, uint stage, uint curr_source, uint curr_dest, const uint3 coords) {
+void ifft_stage(uint stage, uint curr_source, uint curr_dest, const uint3 coords) {
 	uint x_coord = coords.x;
 	uint y_coord = coords.y;
 	uint cascade_index = coords.z;
@@ -68,11 +65,10 @@ void ifft_stage(uint N, uint stage, uint curr_source, uint curr_dest, const uint
 #endif
 }
 
-kernel[FFT_SIZE_HALF, 1, 1] ifftRow(g_id : GlobalInvocationID, l_id : LocalInvocationID, wgs : WorkGroupSize) {
+kernel[halfN, 1, 1] ifftRow(g_id : GlobalInvocationID, l_id : LocalInvocationID) {
 	uint x_coord = g_id.x;
 	uint y_coord = g_id.y;
-	uint N = 2u * wgs.x;
-	if (x_coord >= N/2 || y_coord >= N || g_id.z >= MAX_CASCADES) {
+	if (x_coord >= halfN || y_coord >= N || g_id.z >= MAX_CASCADES) {
 		return;
 	}
 	const int cascade_index = int(g_id.z);
@@ -82,11 +78,11 @@ kernel[FFT_SIZE_HALF, 1, 1] ifftRow(g_id : GlobalInvocationID, l_id : LocalInvoc
 	uint curr_dest = 1;
 	local_twiddles[x_coord] = twiddles[x_coord];
 	local_data[0][x_coord] = fft_index(l_id.x, g_id.y);
-	local_data[0][x_coord + wgs.x] = fft_index(l_id.x + wgs.x, g_id.y);
+	local_data[0][x_coord + halfN] = fft_index(l_id.x + halfN, g_id.y);
 	barrier();
 	
 	for (uint stage = 0u; stage < logN; stage++) {
-		ifft_stage(N, stage, curr_source, curr_dest, uint3(x_coord, y_coord, cascade_index));
+		ifft_stage(stage, curr_source, curr_dest, uint3(x_coord, y_coord, cascade_index));
 		barrier();
 		
 		uint next_dest = curr_source;
@@ -95,14 +91,13 @@ kernel[FFT_SIZE_HALF, 1, 1] ifftRow(g_id : GlobalInvocationID, l_id : LocalInvoc
 	}
 
 	fft_index(l_id.x, g_id.y) = local_data[curr_source][x_coord];
-	fft_index(l_id.x + wgs.x, g_id.y) = local_data[curr_source][x_coord + wgs.x];
+	fft_index(l_id.x + halfN, g_id.y) = local_data[curr_source][x_coord + halfN];
 }
 
-kernel[FFT_SIZE_HALF, 1, 1] ifftColumn(g_id : GlobalInvocationID, l_id : LocalInvocationID, wgs : WorkGroupSize) {
+kernel[halfN, 1, 1] ifftColumn(g_id : GlobalInvocationID, l_id : LocalInvocationID) {
 	uint x_coord = g_id.x;
 	uint y_coord = g_id.y;
-	uint N = 2u * wgs.x;
-	if (x_coord >= N/2 || y_coord >= N || g_id.z >= MAX_CASCADES) {
+	if (x_coord >= halfN || y_coord >= N || g_id.z >= MAX_CASCADES) {
 		return;
 	}
 	const int cascade_index = int(g_id.z);
@@ -112,15 +107,15 @@ kernel[FFT_SIZE_HALF, 1, 1] ifftColumn(g_id : GlobalInvocationID, l_id : LocalIn
 	uint curr_dest = 1;
 	local_twiddles[x_coord] = twiddles[x_coord];
 	local_data[0][x_coord] = fft_index(g_id.y, l_id.x);
-	local_data[0][x_coord + wgs.x] = fft_index(g_id.y, l_id.x + wgs.x);
+	local_data[0][x_coord + halfN] = fft_index(g_id.y, l_id.x + halfN);
 	barrier();
 	for (uint stage = 0u; stage < logN; stage++) {
-		ifft_stage(N, stage, curr_source, curr_dest, uint3(x_coord, y_coord, cascade_index));
+		ifft_stage(stage, curr_source, curr_dest, uint3(x_coord, y_coord, cascade_index));
 		barrier();
 		uint next_dest = curr_source;
 		curr_source = curr_dest;
 		curr_dest = next_dest;
 	}
 	fft_index(g_id.y, l_id.x) = local_data[curr_source][x_coord];
-	fft_index(g_id.y, l_id.x + wgs.x) = local_data[curr_source][x_coord + wgs.x];
+	fft_index(g_id.y, l_id.x + halfN) = local_data[curr_source][x_coord + halfN];
 }

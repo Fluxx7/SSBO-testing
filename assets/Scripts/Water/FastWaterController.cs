@@ -55,13 +55,14 @@ public partial class FastWaterController : Node {
 	private ComputeGroup spectrums;
 	private ComputeGroup spreadings;
 	private ComputeGroup bufferUpdaters;
-	private OptimFFTHandler fftHandler;
+	private OptimFftHandler fftHandler;
 	private float _currentSeed;
 	private float _time;
-	private const uint MAX_CASCADES = 4;
+	public const uint MAX_CASCADES = 4;
 	[Export] public uint numCascades = 2;
 
 	private Array<float> _tileLengths = new() { 1000f, 370f, 80f, 30f};
+	
 
 	[Export]
 	public Array<float> TileLengths {
@@ -106,6 +107,12 @@ public partial class FastWaterController : Node {
 
 	private Dictionary<StringName, Texture2DArrayRD> texRdCache = new();
 	private Array<Image> gaussian_cache = [];
+	private Array<Vector2> cascadeFoamParams = [
+		new(0.6f, 3.0f),
+		new(0.65f, 2.5f),
+		new(0.7f, 1.5f),
+		new(0.5f, 0.5f)
+	]; 
 
 	private Action<Rid> MakeTextureCallback(StringName texture_name) {
 		return tex_rid => {
@@ -122,8 +129,14 @@ public partial class FastWaterController : Node {
 		}
 	}
 
-	public void ToggleSimulate(bool sim) {
-		_simulate = sim;
+	public void SetWhitecap(int cascade_index, float whitecap) {
+		cascadeFoamParams[cascade_index] = new Vector2(whitecap, cascadeFoamParams[cascade_index].Y);
+		UpdateCascadeParam(cascade_index);
+	}
+	
+	public void SetFoamAmount(int cascade_index, float foam_amount) {
+		cascadeFoamParams[cascade_index] = new Vector2(cascadeFoamParams[cascade_index].X, foam_amount);
+		UpdateCascadeParam(cascade_index);
 	}
 
 	public override void _Ready() {
@@ -155,10 +168,12 @@ public partial class FastWaterController : Node {
 		});
 	}
 
-	private void UpdateTileLength(int index) {
-		bufferUpdaters.Dispatch("updateTileLength", 1, 1, 1, new Dictionary<StringName, Variant> {
-			{"tileLengthIndex", (uint) index},
-			{"tileLength", _tileLengths[index]}
+	private void UpdateCascadeParam(int index) {
+		bufferUpdaters.Dispatch("updateCascadeParam", 1, 1, 1, new Dictionary<StringName, Variant> {
+			{"cascade_index", (uint) index},
+			{"param_x", _tileLengths[index]},
+			{"param_y", cascadeFoamParams[index].X},
+			{"param_z", cascadeFoamParams[index].Y}
 		});
 		EmitSignalTileLengthsChanged(_tileLengths);
 	}
@@ -187,11 +202,12 @@ public partial class FastWaterController : Node {
 		gaussianNoise = spreadings.GetTexture2DArray("spectrumCoefficients");
 		oceanParams = bufferUpdaters.GetStorageBuffer("oceanParams");
 		oceanParams.SetUnsizedElementCount(MAX_CASCADES);
+		cascadeFoamParams.Resize((int) MAX_CASCADES);
 		FSLStorageBuffer spectrumData = spreadings.GetStorageBuffer("spectrumDataBuffer");
 		spectrums.AssignResource(spectrumData, "spectrumDataBuffer");
 		UpdateParamBuffer();
 		for (var tl_index = 0; tl_index < _tileLengths.Count; tl_index++) {
-			UpdateTileLength(tl_index);
+			UpdateCascadeParam(tl_index);
 		}
 		
 		spectrums.AssignResource(oceanParams, "oceanParams");
@@ -201,13 +217,12 @@ public partial class FastWaterController : Node {
 		baseSpectrum.ConnectAndCall(Callable.From(MakeTextureCallback("baseSpectrum")));
 
 		GenerateGaussian();
-		OptimFFTHandler.TextureCallbacks callbacks = new OptimFFTHandler.TextureCallbacks{
-			spectrumCallback = MakeTextureCallback("spectrumTexture"),
-			heightCallback = MakeTextureCallback("heightMaps"),
-			gradientCallback = MakeTextureCallback("gradientMaps"),
-			foamCallback = MakeTextureCallback("foamMaps")
+		OptimFftHandler.TextureCallbacks callbacks = new OptimFftHandler.TextureCallbacks{
+			SpectrumCallback = MakeTextureCallback("spectrumTexture"),
+			HeightCallback = MakeTextureCallback("heightMaps"),
+			GradFoamCallback = MakeTextureCallback("gradFoamMaps")
 		};
-		fftHandler = new OptimFFTHandler(_texSize, numCascades, baseSpectrum, oceanParams, callbacks);
+		fftHandler = new OptimFftHandler(_texSize, numCascades, baseSpectrum, oceanParams, callbacks);
 
 		if (controlWindow != null && controlWindowToggle != null) {
 			InitControlWindow();
@@ -216,7 +231,7 @@ public partial class FastWaterController : Node {
 	
 	private void GenerateWaves(float delta) {
 		
-		fftHandler.Run(delta, _time, _tileLengths[0], _depth);
+		fftHandler.Run(delta, _time);
 	}
 
 	private void GenerateGaussian() {
@@ -293,7 +308,11 @@ public partial class FastWaterController : Node {
 		spreadings.Dispatch(spreadingKernelName, _texSize, _texSize, numCascades, pushConstants);
 	}
 
-	
+
+	public void UseMips(bool use_mips) {
+		fftHandler.UseMips(use_mips);
+		GenerateWaves(0f);
+	}
 
 	private HBoxContainer createFloatSelector(string text, float starting_value, Action<float> setter, float min_val = 0f, float max_val = 100f, float step = 1f, bool allow_greater = false) {
 		var newContainer = new HBoxContainer();
@@ -326,7 +345,7 @@ public partial class FastWaterController : Node {
 		tileLength.Value = _tileLengths[index];
 		tileLength.ValueChanged += value => {
 			_tileLengths[index] = (float)value;
-			UpdateTileLength(index);
+			UpdateCascadeParam(index);
 			GenerateSpectrum();
 			GenerateWaves(0f);
 		};
