@@ -1,0 +1,54 @@
+#include "mesh_common.fsl"
+
+kernel[16, 16, 1] genSubdivMesh(g_id : GlobalInvocationID, f32 sizeX, f32 sizeY, u32 subdivisions) {
+	const u32 verts_per_side = subdivisions + 2;
+	const u32 indices_per_side = subdivisions + 1;
+	if (g_id.x >= verts_per_side || g_id.y >= verts_per_side) {
+		return;	
+	}	
+	const f32x2 size = f32x2(sizeX, sizeY);
+	const f32x2 step = size / f32(verts_per_side - 1);
+	
+	const u32 col = g_id.x;
+	const u32 row = g_id.y;
+	const u32 vert_id = row * verts_per_side + col;
+	
+	f32 half_size = f32(verts_per_side - 1) * 0.5;
+	vertex_buffer.data[vert_id].x = (f32(col) - half_size) * step.y;
+	vertex_buffer.data[vert_id].y = 0.0;
+	vertex_buffer.data[vert_id].z = (f32(row) - half_size) * step.x;
+	
+	
+	if (row < verts_per_side - 1 && col < verts_per_side - 1) {
+		const u32 vertex_count = verts_per_side * verts_per_side;
+		const u32 cell_id = row * indices_per_side + col;
+		const u32 top_left = vert_id;
+		const u32 top_right = top_left + 1;
+		const u32 bottom_left = vert_id + verts_per_side;
+		const u32 bottom_right = bottom_left + 1;
+		
+		if (vertex_count <= 65536) {
+			index_buffer.data[cell_id].v0 = pack_uints(top_left, top_right);
+			index_buffer.data[cell_id].v1 = pack_uints(bottom_left, top_right);
+			index_buffer.data[cell_id].v2 = pack_uints(bottom_right, bottom_left);
+		} else {
+			const u32 cell_base = cell_id * 2;
+			index_buffer.data[cell_base].v0 = top_left;
+			index_buffer.data[cell_base].v1 = top_right;
+			index_buffer.data[cell_base].v2 = bottom_left;
+			index_buffer.data[cell_base + 1].v0 = top_right;
+			index_buffer.data[cell_base + 1].v1 = bottom_right;
+			index_buffer.data[cell_base + 1].v2 = bottom_left;
+		}
+		
+	}
+
+	if (col == 0 && row == 0) {
+		const u32 index_count = indices_per_side * indices_per_side * 6;
+		draw_command_buffer.index_count = index_count;
+		draw_command_buffer.instance_count = 1;
+		draw_command_buffer.first_index = 0;
+		draw_command_buffer.vertex_offset = 0;
+		draw_command_buffer.first_instance = 0;	
+	}
+}

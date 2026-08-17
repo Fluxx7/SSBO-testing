@@ -1,0 +1,171 @@
+#include "shared_resources.fsl"
+
+layout(rgba32f) uniform image2DArray spectrumCoefficients;
+
+kernel[32, 32, 1] noSpreading(g_id : GlobalInvocationID, f32 strength) {
+    if (g_id.x >= N) return;
+    if (g_id.y >= N) return;
+    if (g_id.z >= paramsBuffer.numCascades) return;
+    const i32 texSize = i32(N);
+    i32x2 id = i32x2(g_id.xy);
+    const i32 cascade_index = i32(g_id.z);
+    const f32 tile_length = paramsBuffer.cascadeParams[cascade_index].x;
+
+    f32 base_sample = imageLoad(spectrumMap, i32x3(id, cascade_index)).r;
+    f32x2 coeffs = imageLoad(spectrumCoefficients, i32x3(id, cascade_index)).rg;
+    f32x2 k_vec = 2.0 * PI * (id - texSize * 0.5) / tile_length;
+    f32 direction_spectrum = base_sample / (2.0 * PI);
+    f32 output_coeff = sqrt(direction_spectrum) * (2.0 * PI / tile_length) / sqrt(2.0);
+    f32x2 out_values = output_coeff * coeffs;
+    imageStore(baseSpectrum, i32x3(id, cascade_index), f32x4(out_values, 0.0, 1.0));
+}
+
+
+f32 positive_cos_spreading(f32x2 k_vec, f32 windDirection) {
+    f32 wave_direction = atan(k_vec.y, k_vec.x);
+    f32 theta = wave_direction - windDirection;
+    if (abs(theta) > (PI / 2.0)) {
+        return 0.0;
+    }
+    return 2.0 * pow(cos(theta), 2.0) / PI;
+}
+
+kernel[32, 32, 1] positiveCosSpreading(g_id : GlobalInvocationID, f32 strength) {
+    if (g_id.x >= N) return;
+    if (g_id.y >= N) return;
+    if (g_id.z >= paramsBuffer.numCascades) return;
+    const i32 texSize = i32(N);
+    i32x2 id = i32x2(g_id.xy);
+    const i32 cascade_index = i32(g_id.z);
+	const f32 tile_length = paramsBuffer.cascadeParams[cascade_index].x;
+
+    f32 base_sample = imageLoad(spectrumMap, i32x3(id, cascade_index)).r;
+    f32x2 coeffs = imageLoad(spectrumCoefficients, i32x3(id, cascade_index)).rg;
+    f32x2 k_vec = 2.0 * PI * (id - texSize * 0.5) / tile_length;
+    f32 no_spread_spectrum = base_sample / (2.0 * PI);
+    f32 direction_spectrum = base_sample * positive_cos_spreading(k_vec, paramsBuffer.windDirection);
+    f32 output_coeff = sqrt(mix(no_spread_spectrum, direction_spectrum, strength)) * (2.0 * PI / tile_length) / sqrt(2.0);
+    
+    imageStore(baseSpectrum, i32x3(id, cascade_index), f32x4(output_coeff * coeffs.x, output_coeff * coeffs.y, 0.0, 1.0));
+}
+
+
+// Approximation from GodotOceanWaves, appears to be derived via Taylor expansion
+f32 longeut_higgins_normalization(f32 s) {
+    f32 a = sqrt(s);
+	return (s < 0.4) ? (0.5/PI) + s*(0.220636+s*(-0.109+s*0.090)) : inversesqrt(PI)*(a*0.5 + (1.0/a)*0.0625);
+}
+
+f32 mitsuyasu_spreading(f32x2 k_vec, f32 omega_peak, f32 depth, f32 windSpeed, f32 windDirection) {
+	f32 s_p = 11.5 * pow(omega_peak * windSpeed / g, -2.5);
+	f32 tan_k = 0.0;
+	f32 omega = dispersion_relation(length(k_vec), depth, tan_k);
+	f32 s = omega > omega_peak ? s_p * pow(omega / omega_peak, -2.5) : s_p * pow(omega / omega_peak, 5);
+	
+	f32 wave_direction = atan(k_vec.y, k_vec.x);
+	f32 theta = wave_direction - windDirection;
+	
+	return longeut_higgins_normalization(s) * pow(abs(cos(theta * 0.5)), 2.0 * s);
+}
+
+kernel[32, 32, 1] mitsuyasuSpreading(g_id : GlobalInvocationID, f32 strength) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
+	if (g_id.z >= paramsBuffer.numCascades) return;
+	const i32 texSize = i32(N);
+	i32x2 id = i32x2(g_id.xy);
+	const i32 cascade_index = i32(g_id.z);
+	const f32 tile_length = paramsBuffer.cascadeParams[cascade_index].x;
+
+	f32 base_sample = imageLoad(spectrumMap, i32x3(id, cascade_index)).r;
+	f32x2 coeffs = imageLoad(spectrumCoefficients, i32x3(id, cascade_index)).rg;
+	f32x2 k_vec = 2.0 * PI * (id - texSize * 0.5) / tile_length;
+	
+	f32 no_spread_spectrum = base_sample / (2.0 * PI);
+	f32 direction_spectrum = base_sample * mitsuyasu_spreading(k_vec, spectrumData.omega_peak, paramsBuffer.depth, paramsBuffer.windSpeed, paramsBuffer.windDirection);
+	f32 output_coeff = sqrt(mix(no_spread_spectrum, direction_spectrum, strength)) * (2.0 * PI / tile_length) / sqrt(2.0);
+	f32x2 out_values = output_coeff * coeffs;
+	imageStore(baseSpectrum, i32x3(id, cascade_index), f32x4(out_values, 0.0, 1.0));
+}
+
+f32 hasselmann_spreading(f32x2 k_vec, f32 omega_peak, f32 depth, f32 windSpeed, f32 windDirection) {
+	f32 tan_k = 0.0;
+	f32 omega = dispersion_relation(length(k_vec), depth, tan_k);
+	f32 s = omega > omega_peak ? 9.77 * pow(omega / omega_peak, -2.33 - 1.45 * ((windSpeed * omega_peak / g) - 1.17)) : 6.97 * pow(omega / omega_peak, 4.06);
+	
+	f32 wave_direction = atan(k_vec.y, k_vec.x);
+	f32 theta = wave_direction - windDirection;
+	
+	return longeut_higgins_normalization(s) * pow(abs(cos(theta * 0.5)), 2.0 * s);
+}
+
+kernel[32, 32, 1] hasselmannSpreading(g_id : GlobalInvocationID, f32 strength) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
+	if (g_id.z >= paramsBuffer.numCascades) return;
+	const i32 texSize = i32(N);
+	i32x2 id = i32x2(g_id.xy);
+	const i32 cascade_index = i32(g_id.z);
+	const f32 tile_length = paramsBuffer.cascadeParams[cascade_index].x;
+
+	f32 base_sample = imageLoad(spectrumMap, i32x3(id, cascade_index)).r;
+	f32x2 coeffs = imageLoad(spectrumCoefficients, i32x3(id, cascade_index)).rg;
+	f32x2 k_vec = 2.0 * PI * (id - texSize * 0.5) / tile_length;
+	
+	f32 no_spread_spectrum = base_sample / (2.0 * PI);
+	f32 direction_spectrum = base_sample * hasselmann_spreading(k_vec, spectrumData.omega_peak, paramsBuffer.depth, paramsBuffer.windSpeed, paramsBuffer.windDirection);
+	f32 output_coeff = sqrt(mix(no_spread_spectrum, direction_spectrum, strength)) * (2.0 * PI / tile_length) / sqrt(2.0);
+	f32x2 out_values = output_coeff * coeffs;
+	imageStore(baseSpectrum, i32x3(id, cascade_index), f32x4(out_values, 0.0, 1.0));
+}
+
+f32 donelan_banner_spreading(f32x2 k_vec, f32 omega_peak, f32 depth, f32 windDirection) {
+	if (length(k_vec) < 1e-6) {
+		return 0.0;	
+	}
+	f32 wave_direction = atan(k_vec.y, k_vec.x);
+	f32 theta = wave_direction - windDirection;
+	theta = mod(theta + PI, 2.0 * PI) - PI;
+	f32 tan_k = 0.0;
+	f32 omega = dispersion_relation(length(k_vec), depth, tan_k);
+	f32 omega_ratio = omega / omega_peak;
+	f32 B_s = 0.0;
+	if (omega_ratio < 0.95) {
+		B_s = 2.61 * pow(omega_ratio, 1.3);	
+	} else if (omega_ratio < 1.6) {
+		B_s = 2.28 * pow(omega_ratio, -1.3);	
+	} else {
+		f32 epsilon = -0.4 + 0.8393 * exp(-0.567 * log(omega_ratio * omega_ratio));
+		B_s = pow(10.0, epsilon);	
+	}
+
+	f32 cosh_term = cosh(B_s * theta);
+	f32 sech_term = 0.0;
+	if (cosh_term != 0.0) {
+		sech_term = 1.0 / cosh_term;
+	}
+	
+
+	return B_s / (2.0 * tanh(B_s * PI)) * sech_term * sech_term;
+	
+}
+
+kernel[32, 32, 1] donelanBannerSpreading(g_id : GlobalInvocationID, f32 strength) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
+	if (g_id.z >= paramsBuffer.numCascades) return;
+	const i32 texSize = i32(N);
+	i32x2 id = i32x2(g_id.xy);
+	const i32 cascade_index = i32(g_id.z);
+	const f32 tile_length = paramsBuffer.cascadeParams[cascade_index].x;
+
+	f32 base_sample = imageLoad(spectrumMap, i32x3(id, cascade_index)).r;
+	f32x2 coeffs = imageLoad(spectrumCoefficients, i32x3(id, cascade_index)).rg;
+	f32x2 k_vec = 2.0 * PI * (id - texSize * 0.5) / tile_length;
+	
+	f32 no_spread_spectrum = base_sample / (2.0 * PI);
+	f32 direction_spectrum = base_sample * donelan_banner_spreading(k_vec, spectrumData.omega_peak, paramsBuffer.depth, paramsBuffer.windDirection);
+	f32 output_coeff = sqrt(mix(no_spread_spectrum, direction_spectrum, strength)) * (2.0 * PI / tile_length) / sqrt(2.0);
+	f32x2 out_values = output_coeff * coeffs;
+	imageStore(baseSpectrum, i32x3(id, cascade_index), f32x4(out_values, 0.0, 1.0));
+}

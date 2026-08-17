@@ -10,9 +10,9 @@ config_version=5
 
 [application]
 
-config/name="GodotWaterRenderingFSL"
+config/name="GodotWaterRenderingFSL 4.8"
 run/main_scene="uid://cpwjm2lbw38ds"
-config/features=PackedStringArray("4.7", "C#", "Forward Plus")
+config/features=PackedStringArray("4.8", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [debug]
@@ -23,8 +23,10 @@ file_logging/enable_file_logging=true
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+window/hdr/request_hdr_output=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/vsync/vsync_mode=0
 
 [dotnet]
 
@@ -32,7 +34,11 @@ project/assembly_name="GodotWaterRendering"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/csharp_gdextension_bindgen/plugin.cfg")
+enabled=PackedStringArray("res://addons/csharp_gdextension_bindgen/plugin.cfg", "res://addons/sky_3d/plugin.cfg")
+
+[rendering]
+
+viewport/hdr_2d=true
 
 [shader_globals]
 

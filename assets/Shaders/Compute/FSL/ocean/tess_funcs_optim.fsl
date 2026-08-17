@@ -1,0 +1,145 @@
+#include "complex.fsl"
+#include "shared_resources.fsl"
+
+#define time_cycle 1024.0
+
+f32 dispersion_relation_quant(f32 k_mag, f32 depth) {
+    f32 omega_naught = 2.0 * PI / time_cycle;
+    f32 _out = 0.0;
+    f32 omega = dispersion_relation(k_mag, depth, _out);
+    return floor(omega / omega_naught) * omega_naught;
+}
+
+/*
+how indexing fft_data works:
+fft_data contains 2 2D arrays of equal size (both N*N), but 2D unsized arrays aren't possible,
+so we have to do it manually
+since we are running a one-dimensional FFT on each row, we index row-major
+
+to make this easier, the macro fft_index handles everything automatically.
+the arguments are the x coordinate, the y coordinate, and then which of the two arrays to access 
+*/
+layout(std430) buffer fft1_buffers {
+    f32x2[] fft1_data;
+};
+#define fft1_index(x, y) fft1_data[(cascade_index * texSize + y ) * texSize + x ] 
+#define fft1_vindex(v) fft1_index(v.x, v.y)
+
+layout(std430) buffer fft2_buffers {
+    f32x2[] fft2_data;
+};
+
+#define fft2_index(x, y) fft2_data[(cascade_index * texSize + y ) * texSize + x ] 
+#define fft2_vindex(v) fft2_index(v.x, v.y)
+
+layout(std430) buffer fft3_buffers {
+    f32x2[] fft3_data;
+};
+
+#define fft3_index(x, y) fft3_data[(cascade_index * texSize + y ) * texSize + x ] 
+#define fft3_vindex(v) fft3_index(v.x, v.y)
+
+layout(std430) buffer fft4_buffers {
+    f32x2[] fft4_data;
+};
+
+#define fft4_index(x, y) fft4_data[(cascade_index * texSize + y ) * texSize + x ] 
+#define fft4_vindex(v) fft4_index(v.x, v.y)
+
+kernel[8, 8, 1] updateSpectrum(g_id : GlobalInvocationID, f32 time) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
+	if (g_id.z >= paramsBuffer.numCascades) return;
+	const i32 texSize = i32(N);
+	const i32x2 id = i32x2(g_id.xy);
+	const i32 cascade_index = i32(g_id.z);
+	const f32x2 j = f32x2(0.0, 1.0);
+	const f32 tile_length = paramsBuffer.cascadeParams[cascade_index].x;
+	const f32 depth = paramsBuffer.depth;
+
+	f32 coeff = 2.0 * PI / tile_length;
+	const f32x2 f_kterm = (id - texSize * 0.5) * coeff;
+	
+	const f32x2 Hnaught = imageLoad(baseSpectrum, i32x3(id, cascade_index)).xy;
+	const f32x2 Hnaught_star = complex_conj(imageLoad(baseSpectrum, i32x3((i32x2(texSize, texSize) - id) & (texSize - 1), cascade_index)).xy);
+	const f32 k_mag = length(f_kterm);
+
+	const f32x2 exp_dispersion = exp_j(time * dispersion_relation_quant(k_mag, depth));
+	f32x2 H_tilde = complex_mult(Hnaught, exp_dispersion) + complex_mult(Hnaught_star, complex_conj(exp_dispersion));
+	f32x2 k_unit = f32x2(0.0);
+	if (k_mag > 1e-6) {
+		k_unit = f_kterm / k_mag;
+	}
+	// this image is only for debugging and should be removed for "production"
+	imageStore(spectrumTexture, i32x3(id, cascade_index), f32x4(H_tilde, 0.0, 1.0));
+
+	const f32x2 jH = complex_mult(j, H_tilde);
+
+	// since the output is guaranteed to be real,
+	// multiply one of the inputs by j so that its output will be imaginary, and add it to the other input.
+	// The outputs can then be read from the real and imaginary parts of the resulting complex number  
+	// This cuts the number of FFTs needed in half
+	const f32x2 x_disp = k_unit.x * jH;
+	const f32x2 z_disp = k_unit.y * jH;
+
+	const f32x2 dy_dx = f_kterm.x * jH;
+	const f32x2 dy_dz = f_kterm.y * jH;
+	const f32x2 dx_dx = -H_tilde * f_kterm.x * k_unit.x;
+	const f32x2 dx_dz = -H_tilde * f_kterm.y * k_unit.x;
+	const f32x2 dz_dz = -H_tilde * f_kterm.y * k_unit.y;
+
+	const f32x2 jz_disp = complex_mult(j, z_disp);
+	const f32x2 jdy_dz = complex_mult(j, dy_dz);
+	const f32x2 jdx_dz = complex_mult(j, dx_dz);
+	const f32x2 jdz_dz = complex_mult(j, dz_dz);
+
+	fft1_vindex(id) = H_tilde + jdx_dz;  
+	fft2_vindex(id) = x_disp + jz_disp;
+	fft3_vindex(id) = dy_dx + jdy_dz;
+	fft4_vindex(id) = dx_dx + jdz_dz;
+}
+
+
+layout(rgba16f) uniform image2DArray heightTexture;
+layout(rgba16f) uniform image2DArray gradFoamTexture;
+
+kernel[8, 8, 1] ifftUnpack(g_id : GlobalInvocationID, f32 deltaTime) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
+	if (g_id.z >= paramsBuffer.numCascades) return;
+	const i32 texSize = i32(N);
+	i32x2 id = i32x2(g_id.xy);
+	const i32 cascade_index = i32(g_id.z);
+	
+	const f32 sign_shift = -2*((id.x & 1) ^ (id.y & 1)) + 1;
+	const f32x2 fft1_sample = fft1_vindex(id);
+	const f32x2 fft2_sample = fft2_vindex(id);
+	const f32x2 fft3_sample = fft3_vindex(id);
+	const f32x2 fft4_sample = fft4_vindex(id);
+	
+	f32x3 displacement = f32x3(fft2_sample.x, fft1_sample.x, fft2_sample.y);
+	f32x2 gradients = fft3_sample * sign_shift;
+	f32 dx_dz = fft1_sample.y * sign_shift;
+	f32 dx_dx = fft4_sample.x * sign_shift;
+	f32 dz_dz = fft4_sample.y * sign_shift;
+
+	gradients = gradients / (1.0 + abs(f32x2(dx_dx, dz_dz)));
+	
+	imageStore(heightTexture, i32x3(id, cascade_index), f32x4(displacement * sign_shift, 1.0));
+
+	f32 jacobian = (dx_dx + 1.0) * (dz_dz + 1.0) - dx_dz * dx_dz;
+
+	const f32 whitecap = paramsBuffer.cascadeParams[cascade_index].y;
+	const f32 foam_amount = paramsBuffer.cascadeParams[cascade_index].z;
+	const f32 foam_grow_rate = foam_amount * deltaTime * 7.5;
+	const f32 foam_decay_rate = deltaTime * max(0.5, 10.0 - foam_amount) * 0.15;
+	
+	f32 foam_factor = -min(0.0, jacobian - whitecap);
+	f32 foam = imageLoad(gradFoamTexture, i32x3(id, cascade_index)).y;
+	foam *= exp(-foam_decay_rate);
+	foam += foam_factor * foam_grow_rate;
+	foam = clamp(foam, 0.0f, 1.0f);
+	imageStore(gradFoamTexture, i32x3(id, cascade_index), f32x4(gradients.x, foam, gradients.y, 1.0));
+}
+
+

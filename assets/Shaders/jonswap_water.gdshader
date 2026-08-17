@@ -1,14 +1,12 @@
 shader_type spatial;
-render_mode world_vertex_coords, shadows_disabled;
+render_mode world_vertex_coords, shadows_disabled, cull_disabled, wireframe;
 #include "water_algorithms.gdshaderinc"
 global uniform vec3 camera_coords;
 
 #define MAX_CASCADES 4
 
 uniform sampler2DArray heightMaps : filter_linear_mipmap_anisotropic;
-uniform sampler2DArray gradientMaps : filter_linear_mipmap_anisotropic;
-uniform sampler2DArray foamMaps : filter_linear_mipmap_anisotropic;
-uniform sampler2DArray normalMaps : filter_nearest_mipmap_anisotropic;
+uniform sampler2DArray gradFoamMaps : filter_linear_mipmap_anisotropic;
 uniform float tileLengths[MAX_CASCADES];
 uniform int cascade_count = 4;
 
@@ -20,6 +18,7 @@ uniform bool renderSpecular = true;
 uniform bool renderReflections = true;
 uniform bool renderFoam = true;
 
+uniform float base_roughness = 0.15;
 uniform float cutoff_dist : hint_range(0.0, 8000.0, 10.0) = 1000.0;
 uniform float cutoff_strength : hint_range(0.0, 0.005, 0.0001) = 0.003;
 
@@ -46,15 +45,15 @@ varying float wave_height;
 varying float foam_factor;
 void fragment() {
 	float dist = length(VERTEX.xz);
-	vec2 gradientSample = vec2(0);
-	float foamSample = 0.0;
+	vec3 gradFoamSample = vec3(0);
 	wave_height = 0.0;
 	for (int cascade = 0; cascade < cascade_count; cascade++) {
-		gradientSample += texture(gradientMaps, vec3(coords[cascade], float(cascade))).rb;
-		foamSample += texture(foamMaps, vec3(coords[cascade], float(cascade))).x;
+		gradFoamSample += texture(gradFoamMaps, vec3(coords[cascade], float(cascade))).rgb;
 		wave_height += v_displacement;
-		
 	}
+	
+	vec2 gradientSample = gradFoamSample.xz;
+	float foamSample = gradFoamSample.y;
 	 
 	foam_factor = 0.0;
 	if (renderFoam) {
@@ -63,10 +62,10 @@ void fragment() {
 	v_derivatives = gradientSample;
 	
 	vec3 local_normal = normalize(vec3(-gradientSample.x, 1.0, -gradientSample.y));
-	ROUGHNESS = 0.02 + foam_factor * 0.5;
+	ROUGHNESS = mix(0.35, base_roughness, dist_factor) + foam_factor * 0.5;
 	float specular = 0.0;
 	if (renderReflections) {
-		specular = 0.5;
+		specular = 0.35;
 	}
 	
 	switch (debugRender) {
@@ -80,11 +79,13 @@ void fragment() {
 			ROUGHNESS = 1.0;
 			SPECULAR = 0.0;
 			break;
-		case 2: // Gradients
-			ALBEDO = texture(gradientMaps, vec3(coords[debugCascade], float(debugCascade))).rgb * exp(-dist*0.00075);
+		case 2: { // Gradients
+			vec4 gradFoamDebugSample = texture(gradFoamMaps, vec3(coords[debugCascade], float(debugCascade)));
+			ALBEDO = vec3(gradFoamDebugSample.r, 0.0, gradFoamDebugSample.b) * exp(-dist*0.00075);
 			ROUGHNESS = 1.0;
 			SPECULAR = 0.0;
 			break;
+		}
 	}
 }
 

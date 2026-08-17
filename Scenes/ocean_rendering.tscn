@@ -2,64 +2,26 @@
 
 [ext_resource type="Script" uid="uid://cky6u0t1f7a7w" path="res://assets/Scripts/Utility/FPSLabel.cs" id="1_jpx6j"]
 [ext_resource type="Script" uid="uid://b14j8uj81cqh4" path="res://assets/Scripts/Utility/ControllableCamera.cs" id="4_62ipq"]
-[ext_resource type="Shader" uid="uid://ydttxe06jcko" path="res://assets/Shaders/jonswap_water.gdshader" id="5_e23y0"]
 [ext_resource type="Script" uid="uid://ddumaw17bksl1" path="res://assets/Scripts/Water/FastTextureWater.cs" id="6_epyer"]
 [ext_resource type="Script" uid="uid://pcg032ja3p6u" path="res://assets/Scripts/Water/FastWaterController.cs" id="8_6y65k"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_g538k"]
-sky_top_color = Color(0, 0.22864681, 0.46740246, 1)
-sky_horizon_color = Color(0, 0.4144978, 0.70805776, 1)
-sky_curve = 0.3693434
-ground_bottom_color = Color(1.4439226e-07, 0.34898525, 0.60142386, 1)
-ground_horizon_color = Color(0, 0.41568628, 0.70980394, 1)
-ground_curve = 0.39396572
-sun_angle_max = 26.25
-sun_curve = 0.08615249
+[sub_resource type="PhysicalSkyMaterial" id="PhysicalSkyMaterial_ebsym"]
+rayleigh_color = Color(0.145, 0.29724994, 0.58, 1)
+mie_color = Color(0.6561, 0.70483506, 0.81, 1)
+turbidity = 17.04
+ground_color = Color(0.0025649238, 0.09073507, 0.11476492, 1)
+energy_multiplier = 5.55
 
-[sub_resource type="Sky" id="Sky_kxn0a"]
-sky_material = SubResource("ProceduralSkyMaterial_g538k")
-process_mode = 1
+[sub_resource type="Sky" id="Sky_xaprp"]
+sky_material = SubResource("PhysicalSkyMaterial_ebsym")
 
-[sub_resource type="Environment" id="Environment_6kuhc"]
+[sub_resource type="Environment" id="Environment_3df1w"]
 background_mode = 2
-sky = SubResource("Sky_kxn0a")
-ambient_light_source = 3
-ambient_light_color = Color(0.431282, 0.611583, 1, 1)
-tonemap_mode = 4
-fog_light_color = Color(0.9187855, 0.95721394, 0.8535805, 1)
-fog_light_energy = 0.54
-fog_density = 0.0003
-fog_sky_affect = 0.1
-fog_depth_curve = 2.46228
-fog_depth_begin = 0.0
-fog_depth_end = 335.5
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_57h4j"]
-render_priority = 0
-shader = ExtResource("5_e23y0")
-shader_parameter/water_scatter_color = Color(3.85046e-07, 0.7007736, 0.5251843, 1)
-shader_parameter/air_bubble_color = Color(0.07341317, 0.114474334, 0.19907731, 1)
-shader_parameter/height_scale = 21.1
-shader_parameter/k2 = 0.2
-shader_parameter/k3 = 8.86
-shader_parameter/k4 = 2.9
-shader_parameter/air_bubble_density = 3.4
-shader_parameter/tileLengths = PackedFloat32Array(0, 0, 0, 0)
-shader_parameter/cascade_count = 2
-shader_parameter/debugRender = 0
-shader_parameter/debugCascade = 0
-shader_parameter/renderDiffuse = true
-shader_parameter/renderSpecular = true
-shader_parameter/renderReflections = true
-shader_parameter/renderFoam = true
-shader_parameter/cutoff_dist = 1000.0
-shader_parameter/cutoff_strength = 0.0007
-
-[sub_resource type="PlaneMesh" id="PlaneMesh_21h3a"]
-material = SubResource("ShaderMaterial_57h4j")
-size = Vector2(200, 200)
-subdivide_width = 512
-subdivide_depth = 512
+background_energy_multiplier = 2.71
+sky = SubResource("Sky_xaprp")
+fog_light_color = Color(0.31395203, 0.58077645, 0.7567282, 1)
+fog_sky_affect = 0.186
+fog_height_density = 2.8718
 
 [node name="Node3D" type="Node3D" unique_id=1407384273]
 
@@ -127,17 +89,10 @@ transform = Transform3D(-0.9238795, 0.091282815, -0.37163705, 0, 0.9711343, 0.23
 current = true
 script = ExtResource("4_62ipq")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=518806376]
-environment = SubResource("Environment_6kuhc")
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=1967441659]
-transform = Transform3D(-0.9993919, 0.013411786, 0.03221955, -8.070968e-08, -0.9232092, 0.38429508, 0.034899566, 0.3840608, 0.9226473, 0, 6.89, 0)
-
 [node name="Water" type="MeshInstance3D" parent="." unique_id=1393861654 node_paths=PackedStringArray("Camera", "debugWindow", "debugWindowToggle", "visualsWindow", "visualsWindowToggle")]
-mesh = SubResource("PlaneMesh_21h3a")
 script = ExtResource("6_epyer")
-Subdivide = Vector2i(1024, 1024)
-Size = Vector2(2000, 2000)
+Subdivide = 1024
+Size = Vector2(200, 200)
 Camera = NodePath("../Camera3D")
 debugWindow = NodePath("../Debug Controls")
 debugWindowToggle = NodePath("../CanvasLayer/VBoxContainer/Debug View")
@@ -151,13 +106,26 @@ K2 = 0.86
 K3 = 0.95
 K4 = 2.0
 BubbleDensity = 2.61
+CBTBaseMeshDivisions = 32
 
 [node name="WaterController" type="Node" parent="Water" unique_id=1829685482 node_paths=PackedStringArray("controlWindow", "controlWindowToggle")]
 script = ExtResource("8_6y65k")
-_windSpeed = 21.11
+_depth = 200.0
+_windSpeed = 16.94
+_windDirection = 40.0
+_fetch = 250000.0
 tessendorfAttenuation = 0.08
-_swell = 0.5
+_spreadingStrength = 1.0
+_swell = 0.0
 controlWindow = NodePath("../../Water Controls")
 controlWindowToggle = NodePath("../../CanvasLayer/VBoxContainer/Water Controls")
 numCascades = 4
 TileLengths = Array[float]([2048.0, 370.0, 80.0, 17.0])
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=352627126]
+environment = SubResource("Environment_3df1w")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=1810442185]
+transform = Transform3D(1, 0, 0, 0, -0.99026805, 0.13917318, 0, -0.13917318, -0.99026805, 0, 13.747661, 0)
+light_color = Color(1, 0.98483336, 0.93, 1)
+light_energy = 4.043

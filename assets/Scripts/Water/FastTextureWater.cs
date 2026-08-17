@@ -1,15 +1,17 @@
 using System;
+using FluxxiShaderLang;
 using Godot;
 using Godot.Collections;
+using Range = Godot.Range;
 
 namespace GodotWaterRendering.assets.Scripts.Utility;
 
 public partial class FastTextureWater : MeshInstance3D {
 	private ShaderMaterial _shader;
 	private Shader _debugTexShader;
-	[Export] public Vector2I Subdivide = new(256, 256);
+	[Export] public uint Subdivide = 256;
 	[Export] public Vector2 Size = new(500f,500f);
-	private Vector2I _prevSubdivide;
+	private uint _prevSubdivide;
 	private Vector2 _prevSize;
 	[Export] public Camera3D Camera;
 	[Export] private Window debugWindow;
@@ -19,6 +21,7 @@ public partial class FastTextureWater : MeshInstance3D {
 	private float _prevCameraFov;
 	private bool _simulate = true;
 	private SpinBox layerSelector = new();
+	private SpinBox mipSelector = new();
 	private FastWaterController waterController;
 
 	#region shaderparams
@@ -116,22 +119,24 @@ public partial class FastTextureWater : MeshInstance3D {
 	private float _currentSeed;
 	private float _time;
 	private Dictionary<StringName, ShaderMaterial> _debugRectShaderMats = new();
+	
+	private FSLFile meshGenFile = FSLFile.FromFile("res://assets/Shaders/Compute/FSL/mesh/mesh_gen.fsl");
+	private FSLFile cbTreeFile = FSLFile.FromFile("res://assets/Shaders/Compute/FSL/mesh/cbtrees.fsl");
+	private ComputeKernel meshGen;
+	private ComputePlan cbtMeshGen = new();
+	private ComputePlan initCBTMesh = ComputePlan.MakeNew();
+	private FSLVertexBuffer vertBuffer;
+	private FSLIndexBuffer indexBuffer;
+	private FSLStorageBuffer commandBuffer;
+	private MeshRD _mesh = new();
+	private uint numVertices, numIndices;
+	private uint vertsPerSide;
+	private Rid vertBufferId, indexBufferId, commandBufferId;
+	private bool rebuildQueued = false;
 
-	public void UpdateProperty(Variant value, StringName property) {
-		switch (property) {
-			case "BubbleColor":
-				BubbleColor = value.AsColor();
-				break;
-			case "WaterColor":
-				WaterColor = value.AsColor();
-				break;
-			case "ScatterColor":
-				ScatterColor = value.AsColor();
-				break;
-		}
-	}
-
-
+	[Export] public uint CBTDepth = 16;
+	[Export] public uint CBTBaseMeshDivisions = 4;
+	
 	private void Simulate(bool simulate) {
 		_simulate = simulate;
 	}
@@ -140,18 +145,28 @@ public partial class FastTextureWater : MeshInstance3D {
 		_shader?.SetShaderParameter(texture_name, tex_rd);
 		if (_debugRectShaderMats.TryGetValue(texture_name, out ShaderMaterial shaderMat)) {
 			shaderMat.SetShaderParameter("debug_tex", tex_rd);
+		} else if (texture_name == "gradFoamMaps") {
+			if (_debugRectShaderMats.TryGetValue("gradientMaps", out ShaderMaterial gradShaderMat)) {
+				gradShaderMat.SetShaderParameter("debug_tex", tex_rd);
+			}
+			if (_debugRectShaderMats.TryGetValue("foamMaps", out ShaderMaterial foamShaderMat)) {
+				foamShaderMat.SetShaderParameter("debug_tex", tex_rd);
+			}
 		}
-		
+
 	}
 	
 	public override void _Ready() {
 		if (Engine.IsEditorHint()) {
 			_simulate = false;
 		}
+		
 
 		_debugTexShader = GD.Load<Shader>("res://assets/Shaders/debug_texture.gdshader");
 		_shader = new ShaderMaterial();
 		_shader.SetShader(GD.Load<Shader>("res://assets/Shaders/jonswap_water.gdshader"));
+		// InitMeshShader();
+		InitCBTrees();
 		
 		waterController = GetNode<FastWaterController>("WaterController");
 		waterController.TextureRidUpdated += OnWaterControllerTextureUpdate;
@@ -181,6 +196,7 @@ public partial class FastTextureWater : MeshInstance3D {
 			InitVisualsWindow();
 		}
 		Camera ??= GetViewport().GetCamera3D();
+		RebuildMesh();
 	}
 
 	public override void _Process(double delta) {
@@ -188,17 +204,22 @@ public partial class FastTextureWater : MeshInstance3D {
 		
 		Camera ??= GetViewport().GetCamera3D();
 
-
-		if (Mesh == null || _prevSubdivide != Subdivide || _prevSize != Size) {
-			Mesh = new PlaneMesh() {
-				Size = Size,
-				SubdivideDepth = Subdivide.X,
-				SubdivideWidth = Subdivide.Y
-			};
+		
+		if (Mesh == null || _prevSize != Size || rebuildQueued) {
+			// RebuildMesh();
+			Mesh = _mesh;
 			_prevSubdivide = Subdivide;
 			_prevSize = Size;
-			Mesh.SurfaceSetMaterial(0, _shader);
 		}
+
+		// if (_prevSubdivide != Subdivide) {
+		// 	meshGen.Dispatch(vertsPerSide, vertsPerSide, 1, new Dictionary<StringName, Variant> {
+		// 		{"sizeX", Size.X},
+		// 		{"sizeY", Size.Y},
+		// 		{"subdivisions", Subdivide}
+		// 	});
+		// 	_prevSubdivide = Subdivide;
+		// }
 
 
 		if (_simulate) {
@@ -265,6 +286,8 @@ public partial class FastTextureWater : MeshInstance3D {
 		upperBox.AddChild(CreateDebugTexColorRect("Displacement Map", "heightMaps"));
 		lowerBox.AddChild(CreateDebugTexColorRect("Gradient Map", "gradientMaps"));
 		lowerBox.AddChild(CreateDebugTexColorRect("Foam Map", "foamMaps"));
+		_debugRectShaderMats["gradientMaps"].SetShaderParameter("tex_type", 1);
+		_debugRectShaderMats["foamMaps"].SetShaderParameter("tex_type", 2);
 		lowerBox.Alignment = BoxContainer.AlignmentMode.Center;
 		waterController?.PostTextures();
 		
@@ -291,7 +314,7 @@ public partial class FastTextureWater : MeshInstance3D {
 
 		newBox = new HBoxContainer();
 		newLabel = new Label();
-		newLabel.Text = "Displayed Cascade:";
+		newLabel.Text = "Cascade:";
 		
 		newBox.AddChild(newLabel);
 		
@@ -306,6 +329,25 @@ public partial class FastTextureWater : MeshInstance3D {
 		}; 
 		
 		newBox.AddChild(layerSelector);
+		vBox.AddChild(newBox);
+		
+		newBox = new HBoxContainer();
+		newLabel = new Label();
+		newLabel.Text = "Mipmap Level:";
+		
+		newBox.AddChild(newLabel);
+		
+		
+		mipSelector.Step = 1.0;
+		mipSelector.MinValue = 0.0;
+		mipSelector.ValueChanged += value => {
+			foreach (var (_ ,shader_mat) in _debugRectShaderMats) {
+				shader_mat.SetShaderParameter("mip_level", (int) value);
+				
+			}
+		}; 
+		
+		newBox.AddChild(mipSelector);
 		vBox.AddChild(newBox);
 		buttonBox.AddChild(vBox);
 		
@@ -341,6 +383,24 @@ public partial class FastTextureWater : MeshInstance3D {
 		return newContainer;
 	}
 	
+	private HBoxContainer createFloatSelectorAction(string text, float starting_value, Range.ValueChangedEventHandler action, float min_val = 0f, float max_val = 100f, float step = 1f, bool allow_greater = false) {
+		var newContainer = new HBoxContainer();
+		var colorLabel = new Label();
+		colorLabel.Text = text;
+		
+		var valueSelector = new SpinBox();
+		valueSelector.MinValue = min_val;
+		valueSelector.MaxValue = max_val;
+		valueSelector.AllowGreater = allow_greater;
+		valueSelector.Step = step;
+		valueSelector.Value = starting_value;
+		valueSelector.ValueChanged += action;
+		
+		newContainer.AddChild(colorLabel);
+		newContainer.AddChild(valueSelector);
+		return newContainer;
+	}
+	
 	private void InitVisualsWindow() {
 		var canvasLayer = new CanvasLayer();
 		var visualControlsBox = new VBoxContainer();
@@ -359,12 +419,45 @@ public partial class FastTextureWater : MeshInstance3D {
 		colorParametersBox.AddChild(waterColorControls);
 		colorParametersBox.AddChild(bubbleColorControls);
 		colorParametersBox.AddChild(scatterColorControls);
-		colorParametersBox.AddChild(createFloatSelector("Height Scale", _heightScale, "height_scale", 0f, 50f, 0.01f, true));
-		colorParametersBox.AddChild(createFloatSelector("K2", _k2, "k2", 0f, 20f, 0.01f, true));
-		colorParametersBox.AddChild(createFloatSelector("K3", _k3, "k3", 0f, 20f, 0.01f, true));
-		colorParametersBox.AddChild(createFloatSelector("K4", _k4, "k4", 0f, 20f, 0.01f, true));
-		colorParametersBox.AddChild(createFloatSelector("Bubble Density", _bubbleDensity, "air_bubble_density", 0f, 20f, 0.01f, true));
 
+		var subParametersBox = new HBoxContainer();
+		
+		var shaderParamatersBox = new VBoxContainer();
+		{
+			var shaderParamLabel = new Label();
+			shaderParamLabel.Text = "Water Shader Parameters";
+			shaderParamatersBox.AddChild(shaderParamLabel);
+		}
+		shaderParamatersBox.AddChild(createFloatSelector("Height Scale", _heightScale, "height_scale", 0f, 50f, 0.01f, true));
+		shaderParamatersBox.AddChild(createFloatSelector("K2", _k2, "k2", 0f, 20f, 0.01f, true));
+		shaderParamatersBox.AddChild(createFloatSelector("K3", _k3, "k3", 0f, 20f, 0.01f, true));
+		shaderParamatersBox.AddChild(createFloatSelector("K4", _k4, "k4", 0f, 20f, 0.01f, true));
+		shaderParamatersBox.AddChild(createFloatSelector("Bubble Density", _bubbleDensity, "air_bubble_density", 0f, 20f, 0.01f, true));
+
+		var foamParamsTabs = new TabContainer(); 
+		{
+			for (var i = 0; i < FastWaterController.MAX_CASCADES; i++) {
+				var foamParametersBox = new VBoxContainer();
+				foamParametersBox.Name = $"Cascade {i}";
+				{
+					var foamParamLabel = new Label();
+					foamParamLabel.Text = "Foam Parameters";
+					foamParametersBox.AddChild(foamParamLabel);
+				}
+				var index = i;
+				foamParametersBox.AddChild(createFloatSelectorAction("Whitecap", 0.5f,
+					value => {waterController?.SetWhitecap(index, (float) value); }, 0f, 50f, 0.01f, true));
+				foamParametersBox.AddChild(createFloatSelectorAction("Foam Amount", 0.5f,
+					value => {waterController?.SetFoamAmount(index, (float) value); }, 0f, 50f, 0.01f, true));
+				foamParamsTabs.AddChild(foamParametersBox);
+			}
+		}
+		subParametersBox.AddChild(shaderParamatersBox);
+		subParametersBox.AddChild(foamParamsTabs);
+		
+		colorParametersBox.AddChild(subParametersBox);
+		
+		
 		{
 			var lightingLabel = new Label();
 			lightingLabel.Text = "Lighting Controls";
@@ -390,10 +483,15 @@ public partial class FastTextureWater : MeshInstance3D {
 			lightingControlsBox.AddChild(reflectionsButton);
 			lightingControlsBox.AddChild(foamButton);
 		}
-		
+		var mipsButton = new Button();
+		mipsButton.Text = "Use Mipmaps";
+		mipsButton.ToggleMode = true;
+		mipsButton.ButtonPressed = true;
+		mipsButton.Toggled += (pressed) => { waterController?.UseMips(pressed); };
 
 		visualControlsBox.AddChild(colorParametersBox);
 		visualControlsBox.AddChild(lightingControlsBox);
+		visualControlsBox.AddChild(mipsButton);
 		
 		canvasLayer.AddChild(visualControlsBox);
 		
@@ -405,5 +503,138 @@ public partial class FastTextureWater : MeshInstance3D {
 		visualsWindow.CloseRequested += () => visualsWindowToggle.SetPressed(false);
 		visualsWindow.SetVisible(false);
 		visualsWindowToggle.SetPressed(false);
+	}
+	
+	private void InitMeshShader() {
+		meshGen = meshGenFile.GetKernel("genSubdivMesh");
+		vertsPerSide = Subdivide + 2;
+		numVertices = vertsPerSide * vertsPerSide;
+		numIndices = (vertsPerSide - 1) * (vertsPerSide - 1) * 6;
+		vertBuffer = meshGen.GetVertexBuffer("VertexBuffer");
+		indexBuffer = meshGen.GetIndexBuffer("IndexBuffer");
+		commandBuffer = meshGen.GetStorageBuffer("IndirectDrawCommandBuffer");
+		
+		vertBuffer.SetVertexCount(numVertices);
+		vertBuffer.SetVertexSizeBytes(12);
+		indexBuffer.SetIndexCount(numIndices);
+		indexBuffer.SetIndexFormat(numVertices <= 65536 ? RenderingDevice.IndexBufferFormat.Uint16 : RenderingDevice.IndexBufferFormat.Uint32);
+		
+		vertBuffer.ConnectAndCall(Callable.From((Rid new_rid) => { 
+			vertBufferId = new_rid;
+			rebuildQueued = true;
+		}));
+		indexBuffer.ConnectAndCall(Callable.From((Rid new_rid) => { 
+			indexBufferId = new_rid;
+			rebuildQueued = true;
+		}));
+		commandBuffer.ConnectAndCall(Callable.From((Rid new_rid) => { 
+			commandBufferId = new_rid;
+			rebuildQueued = true;
+		}));
+		meshGen.Dispatch(vertsPerSide, vertsPerSide, 1, new Dictionary<StringName, Variant> {
+			{"sizeX", Size.X},
+			{"sizeY", Size.Y},
+			{"subdivisions", Subdivide}
+		});
+	}
+
+	private void RebuildMesh() {
+		_mesh.ClearSurfaces();
+		_mesh.AddSurface(
+			Mesh.ArrayFormat.FormatVertex | Mesh.ArrayFormat.FormatIndex,
+			Mesh.PrimitiveType.Triangles,
+			(int)numVertices,
+			vertBufferId,
+			new Aabb(new Vector3(-Size.X * 0.5f, -1f, -Size.Y * 0.5f),
+				new Vector3(Size.X, 100f, Size.Y)),
+			indexCount: (int)numIndices,
+			indexBuffer: indexBufferId,
+			material: _shader,
+			indirectBuffer: commandBufferId
+		);
+		// meshGen.Dispatch(vertsPerSide, vertsPerSide, 1, new Dictionary<StringName, Variant> {
+		// 	{"sizeX", Size.X},
+		// 	{"sizeY", Size.Y},
+		// 	{"subdivisions", Subdivide}
+		// });
+		rebuildQueued = false;
+	}
+
+	private void InitCBTrees() {
+		ComputeGroup cbtGroup = cbTreeFile.GetKernelGroup();
+		FSLStorageBuffer dispatchBuffer = cbtGroup.GetStorageBuffer("IndirectDispatchBuffer");
+		
+		vertsPerSide = Subdivide + 2;
+		numVertices = Math.Max(66536, 4 * CBTBaseMeshDivisions * CBTBaseMeshDivisions * 3);
+		numIndices = Math.Max(66536, 4 * CBTBaseMeshDivisions * CBTBaseMeshDivisions * 3);
+		vertBuffer = cbtGroup.GetVertexBuffer("VertexBuffer");
+		indexBuffer = cbtGroup.GetIndexBuffer("IndexBuffer");
+		commandBuffer = cbtGroup.GetStorageBuffer("IndirectDrawCommandBuffer");
+		
+		vertBuffer.SetVertexCount(numVertices);
+		vertBuffer.SetVertexSizeBytes(12);
+		indexBuffer.SetIndexCount(numIndices);
+		indexBuffer.SetIndexFormat(RenderingDevice.IndexBufferFormat.Uint32);
+		
+		vertBuffer.ConnectAndCall(Callable.From((Rid new_rid) => { 
+			vertBufferId = new_rid;
+			rebuildQueued = true;
+		}));
+		indexBuffer.ConnectAndCall(Callable.From((Rid new_rid) => { 
+			indexBufferId = new_rid;
+			rebuildQueued = true;
+		}));
+		commandBuffer.ConnectAndCall(Callable.From((Rid new_rid) => { 
+			commandBufferId = new_rid;
+			rebuildQueued = true;
+		}));
+		
+		cbtGroup.GetStorageBuffer("BisectorBuffer").SetUnsizedElementCount((uint) Math.Pow(2, CBTDepth));
+		cbtGroup.GetStorageBuffer("CBTreeBuffer").SetUnsizedElementCount((uint) Math.Pow(2, CBTDepth + 1));
+		cbtGroup.GetStorageBuffer("CBTDataBuffer").SetUnsizedElementCount((uint) Math.Pow(2, CBTDepth));
+		cbtGroup.GetVertexBuffer("VertexInputBuffer").SetVertexCount(numVertices);
+		cbtGroup.GetVertexBuffer("VertexInputBuffer").SetVertexSizeBytes(12);
+		cbtGroup.GetStorageBuffer("HalfEdgeBuffer")
+			.SetUnsizedElementCount(4 * CBTBaseMeshDivisions * CBTBaseMeshDivisions);
+		
+		initCBTMesh.AddKernel(cbtGroup.GetKernel("initBuffers"), CBTBaseMeshDivisions, CBTBaseMeshDivisions, 1,
+				new Dictionary<StringName, Variant> {
+					{"sizeX", Size.X},
+					{"sizeY", Size.Y},
+					{ "cbt_depth_in", CBTDepth },
+					{ "base_mesh_divisions", CBTBaseMeshDivisions }
+				})
+			.AddBarrier()
+			.AddKernelWorkgroups(cbtGroup.GetKernel("postHalfEdge"), 1, 1, 1,
+				new Dictionary<StringName, Variant> {
+					{ "cbt_depth_in", CBTDepth }
+				})
+			.AddBarrier()
+			.AddKernelIndirect(cbtGroup.GetKernel("makeRootBisectors"), dispatchBuffer, 0)
+			.AddBarrier()
+			.AddKernelIndirect(cbtGroup.GetKernel("buildTris"), dispatchBuffer, 0)
+			.AddBarrier()
+			.Dispatch();
+		
+		cbtMeshGen.AddKernel(cbtGroup.GetKernel("resetCounter"), 1, 1, 1)
+			.AddBarrier()
+			.AddKernelIndirect(cbtGroup.GetKernel("cachePointers"), dispatchBuffer, 0)
+			.AddBarrier()
+			.AddKernelIndirect(cbtGroup.GetKernel("resetCommands"), dispatchBuffer, 0)
+			.AddBarrier()
+			.AddKernelIndirect(cbtGroup.GetKernel("generateCommands"), dispatchBuffer, 0)
+			.AddBarrier()
+			.AddKernelIndirect(cbtGroup.GetKernel("reserveBlocks"), dispatchBuffer, 0)
+			.AddBarrier()
+			.AddKernelIndirect(cbtGroup.GetKernel("fillNewBlocks"), dispatchBuffer, 0)
+			.AddBarrier()
+			.AddKernelIndirect(cbtGroup.GetKernel("updateNeighbors"), dispatchBuffer, 0)
+			.AddBarrier()
+			.AddKernelIndirect(cbtGroup.GetKernel("updateBitfield"), dispatchBuffer, 0);
+		for (var d = 0; d < CBTDepth; d++) {
+			cbtMeshGen.AddBarrier().AddKernel(cbtGroup.GetKernel("sumReduction"), (uint)Math.Pow(2, d), 1, 1);
+		}
+		cbtMeshGen.AddBarrier().AddKernelIndirect(cbtGroup.GetKernel("buildTris"), dispatchBuffer, 0);
+		
 	}
 }

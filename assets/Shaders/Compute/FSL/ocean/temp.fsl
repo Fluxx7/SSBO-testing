@@ -1,0 +1,13 @@
+#include "shared_resources.fsl"
+
+kernel[1, 1, 1] updateParams(u32 numCascades, f32 windSpeed, f32 windDirection, f32 depth, f32 fetch) {
+	paramsBuffer.numCascades = numCascades;
+	paramsBuffer.windSpeed = windSpeed;
+	paramsBuffer.windDirection = windDirection;
+	paramsBuffer.depth = depth;
+	paramsBuffer.fetch = fetch;
+}
+
+kernel[1, 1, 1] updateCascadeParam(u32 cascade_index, f32 param_x, f32 param_y, f32 param_z) {
+	paramsBuffer.cascadeParams[cascade_index] = f32x4(param_x, param_y, param_z, 1.0);
+}

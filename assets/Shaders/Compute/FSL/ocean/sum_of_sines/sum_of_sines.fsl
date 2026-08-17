@@ -1,0 +1,57 @@
+layout(rgba16f) uniform image2D waveTexture;
+
+kernel[2, 1, 1] textureGen(id : GlobalInvocationID, i32 waveCount, f32 baseSeed, f32 baseAmplitude, f32 baseFrequency, f32 lacunarity, f32 gain) {
+    if (id.x >= waveCount) return;
+    f32 multiplier = baseSeed * (id.x + 1);
+
+    f32 dirX = sin(multiplier);
+    f32 dirY = cos(multiplier);
+    f32 amplitude = baseAmplitude * pow(lacunarity, id.x);
+    f32 frequency = baseFrequency * pow(gain, id.x);
+    f32 phase = cos(multiplier) * 10.0;
+    imageStore(waveTexture, i32x2(gl_GlobalInvocationID.x, 0), f32x4(dirX, dirY, phase, 1.0));
+    imageStore(waveTexture, i32x2(gl_GlobalInvocationID.x, 1), f32x4(amplitude, frequency, 0.0, 1.0));
+}
+
+kernel[2, 1, 1] textureGenAdv(id : GlobalInvocationID, i32 waveCount, f32 baseSeed, f32 baseAmplitude, f32 baseFrequency, f32 lacunarity, f32 gain) {
+    if (id.x >= waveCount) return;
+    f32 multiplier = baseSeed * (id.x + 1);
+    f32x2 direction_flip = f32x2(sin(baseSeed), cos(baseSeed));
+    f32x4 direction_lock = f32x4(-0.96, 0.96, -0.96, 0.96);
+    if (direction_flip.x <= 0.0) {
+        if (direction_flip.y <= 0.0) {
+            direction_lock.x = direction_flip.x;
+            direction_lock.y = 1.0 + direction_flip.x;
+            direction_lock.z = direction_flip.y;
+            direction_lock.w = 1.0 + direction_flip.y;
+        } else {
+            direction_lock.x = 1.0 - direction_flip.y;
+            direction_lock.y = direction_flip.y;
+            direction_lock.z = direction_flip.x;
+            direction_lock.w = 1.0 + direction_flip.x;
+        }
+    } else {
+        if (direction_flip.y <= 0.0) {
+            direction_lock.x = direction_flip.y;
+            direction_lock.y = 1.0 + direction_flip.y;
+            direction_lock.z = 1.0 - direction_flip.x;
+            direction_lock.w = direction_flip.x;
+        } else {
+            direction_lock.x = 1.0 - direction_flip.x;
+            direction_lock.y = direction_flip.x;
+            direction_lock.z = 1.0 - direction_flip.y;
+            direction_lock.w = direction_flip.y;
+        }
+    }
+
+    f32x2 direction_determinant = f32x2((direction_lock.x + direction_lock.y) * 0.5, (direction_lock.z + direction_lock.w) + 0.5);
+    f32x2 direction_distribution = f32x2(abs(direction_lock.x - direction_determinant.x), abs(direction_lock.z - direction_determinant.y));
+
+    f32 dirX = sin(multiplier)*direction_distribution.x + direction_determinant.x;
+    f32 dirY = cos(multiplier)*direction_distribution.y + direction_determinant.y;
+    f32 amplitude = baseAmplitude * pow(lacunarity, id.x);
+    f32 frequency = baseFrequency * pow(gain, id.x);
+    f32 phase = cos(multiplier) * 10.0;
+    imageStore(waveTexture, i32x2(id.x, 0), f32x4(dirX, dirY, phase, 1.0));
+    imageStore(waveTexture, i32x2(id.x, 1), f32x4(amplitude, frequency, 0.0, 1.0));
+}

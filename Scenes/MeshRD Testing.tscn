@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://farsdj6y0ymp"]
+
+[ext_resource type="Script" uid="uid://dq12etyqk5vv6" path="res://assets/Scripts/Utility/MeshTest.cs" id="1_dmo6u"]
+[ext_resource type="Script" uid="uid://b14j8uj81cqh4" path="res://assets/Scripts/Utility/ControllableCamera.cs" id="1_hrjth"]
+[ext_resource type="Shader" uid="uid://qif3o50i1xb7" path="res://Scenes/test_mesh.gdshader" id="2_75ssb"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_gd4i4"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dmo6u"]
+render_priority = 0
+shader = ExtResource("2_75ssb")
+
+[sub_resource type="PhysicalSkyMaterial" id="PhysicalSkyMaterial_ebsym"]
+
+[sub_resource type="Sky" id="Sky_xaprp"]
+sky_material = SubResource("PhysicalSkyMaterial_ebsym")
+
+[sub_resource type="Environment" id="Environment_hrjth"]
+background_mode = 2
+sky = SubResource("Sky_xaprp")
+
+[node name="MeshRdTesting" type="Node3D" unique_id=2128543491]
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=2026046529]
+transform = Transform3D(1, 0, 0, 0, 0.9930255, 0.117900096, 0, -0.117900096, 0.9930255, 0, 2.549985, 3.728664)
+current = true
+script = ExtResource("1_hrjth")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1922098319]
+mesh = SubResource("BoxMesh_gd4i4")
+script = ExtResource("1_dmo6u")
+Subdivisions = 1024
+Size = Vector2(100, 100)
+Material = SubResource("ShaderMaterial_dmo6u")
+CBTBaseMeshDivisions = 32
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=996728850]
+transform = Transform3D(1, 0, 0, 0, 0.2586681, 0.9659663, 0, -0.9659663, 0.2586681, 0, 2.948106, 0)
+light_color = Color(1.353, 1.345, 1.233, 1)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1814401543]
+environment = SubResource("Environment_hrjth")

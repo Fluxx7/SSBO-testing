@@ -1,2 +1,5 @@
 # Normalize EOL for all files that Git considers text files.
 * text=auto eol=lf
+
+# Never touch the vendored GDExtension binaries.
+addons/fluxxishaderlang/bin/** binary

@@ -63,7 +63,7 @@ public partial class Water : MeshInstance3D {
 
 	
 	// compute shader stuff
-	private FSLFile sumOfSinesShader = FSLFile.FromFile("res://assets/Shaders/Compute/FSL/sum_of_sines/sum_of_sines.fsl");
+	private FSLFile sumOfSinesShader = FSLFile.FromFile("res://assets/Shaders/Compute/FSL/ocean/sum_of_sines/sum_of_sines.fsl");
 	private ComputeKernel textureGen;
 	private ComputeKernel textureGenAdv;
 

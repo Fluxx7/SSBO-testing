@@ -1,0 +1,22 @@
+// helper functions for complex number math
+
+f32x2 complex_mult(f32x2 a, f32x2 b) {
+    return f32x2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+f32x2 complex_mult(f32 a, f32x2 b) {
+    return f32x2(a * b.x, a * b.y );
+}
+
+f32x2 complex_mult(f32x2 a, f32 b) {
+    return f32x2(a.x * b, a.y * b );
+}
+
+f32x2 complex_conj(f32x2 num) {
+    num.y *= -1.0;
+    return num;
+}
+
+f32x2 exp_j(f32 theta) {
+    return f32x2(cos(theta), sin(theta));
+}

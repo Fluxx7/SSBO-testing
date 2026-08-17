@@ -1,0 +1,151 @@
+#include "shared_resources.fsl"
+
+f32 gamma_function() {
+	return 0.0;
+}
+
+f32 get_kmag(i32x2 id, i32 cascade_index, i32 texSize, f32 tile_length) {
+	return length(2.0 * PI * (id - texSize * 0.5) / tile_length);
+}
+
+f32 tessendorf_spectrum(f32 A, f32 k, f32 windSpeed) {
+    f32 kRcp = 0.0;
+    if (k > 1e-6) {
+        kRcp = 1.0/k;
+    }
+    return A * exp( -1.0f * g * g / pow(windSpeed, 4.0) * kRcp * kRcp) * pow(kRcp, 4.0);
+}
+
+kernel[32, 32, 1] tessendorfSpectrum(g_id : GlobalInvocationID, f32 A) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
+	if (g_id.z >= paramsBuffer.numCascades) return;
+	
+	const i32 texSize = i32(N);
+	i32x2 id = i32x2(g_id.xy);
+	const i32 cascade_index = i32(g_id.z);
+	const f32 tile_length = paramsBuffer.cascadeParams[cascade_index].x;
+
+	f32 k = get_kmag(id, cascade_index, texSize, tile_length);
+	imageStore(spectrumMap, i32x3(id, cascade_index), f32x4(tessendorf_spectrum(A, k, paramsBuffer.windSpeed), 0.0, 0.0, 1.0));
+}
+
+kernel[32, 32, 1] attenuatedTessendorfSpectrum(g_id : GlobalInvocationID, f32 A, f32 l) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
+	if (g_id.z >= paramsBuffer.numCascades) return;
+	const i32 texSize = i32(N);
+	i32x2 id = i32x2(g_id.xy);
+	const i32 cascade_index = i32(g_id.z);
+	const f32 tile_length = paramsBuffer.cascadeParams[cascade_index].x;
+
+	f32 k = get_kmag(id, cascade_index, texSize, tile_length);
+	f32 attenuation = exp(-(k * k) * (l * l));
+	imageStore(spectrumMap, i32x3(id, cascade_index), f32x4(tessendorf_spectrum(A, k, paramsBuffer.windSpeed) * attenuation, 0.0, 0.0, 1.0));
+}
+
+f32 dphi_dk(f32 k_mag, f32 omega, f32 depth, f32 tan_k) {
+    if (omega < 1e-6 || k_mag < 1e-6) {
+        return 0.0;
+    }
+    f32 sech2 = 1.0 - tan_k * tan_k;
+    f32 dfdk  = depth + 3.0 * k_mag * k_mag * water_surface_tension / water_density;
+    f32 domega_dk = (g * tan_k + g * k_mag * sech2 * dfdk) / (2.0 * omega);
+    return domega_dk / k_mag;
+}
+
+f32 a_b_spectrum(f32 omega, f32 A, f32 B) {
+    f32 omegaRcp = 0.0;
+    if (omega > 1e-6) {
+        omegaRcp = 1.0 / omega;
+    }
+    f32 first_term = A * pow(omegaRcp, 5.0);
+    f32 second_term = exp(-B * pow(omegaRcp, 4.0));
+   
+    return first_term * second_term;
+}
+
+kernel[32, 32, 1] abSpectrum(g_id : GlobalInvocationID, f32 A, f32 B) {
+	if (g_id.x >= N) return;
+	if (g_id.y >= N) return;
+	if (g_id.z >= paramsBuffer.numCascades) return;
+	
+	const i32 texSize = i32(N);
+	i32x2 id = i32x2(g_id.xy);
+	const i32 cascade_index = i32(g_id.z);
+	const f32 tile_length = paramsBuffer.cascadeParams[cascade_index].x;
+
+	f32 k_mag = get_kmag(id, cascade_index, texSize, tile_length);
+	f32 tan_k = 0.0;
+	f32 omega = dispersion_relation(k_mag, paramsBuffer.depth, tan_k);
+	imageStore(spectrumMap, i32x3(id, cascade_index), f32x4(a_b_spectrum(omega, A, B) * dphi_dk(k_mag, omega, paramsBuffer.depth, tan_k), 0.0, 0.0, 1.0));
+}
+
+f32x2 jonswap_spectrum(f32 omega, f32 windSpeed, f32 fetch) {
+    const f32 a = 0.076 * pow(windSpeed * windSpeed / (fetch * g), 0.22);
+    const f32 peak_enhancement = 3.3f;
+    const f32 omega_peak = 22.0 * pow(g * g / (windSpeed * fetch), 1.0/3.0);
+
+    const f32 sigma = omega > omega_peak ? 0.09 : 0.07;
+    const f32 r = exp(- pow(omega - omega_peak, 2.0) / (2.0 * sigma * sigma * omega_peak * omega_peak));
+
+    f32 A = a * g * g;
+    f32 B = 5.0/4.0 * pow(omega_peak, 4.0);
+   
+    return f32x2(a_b_spectrum(omega, A, B) * pow(peak_enhancement, r), omega_peak);
+}
+
+kernel[32, 32, 1] jonswapSpectrum(g_id : GlobalInvocationID) {
+    if (g_id.x >= N) return;
+    if (g_id.y >= N) return;
+    if (g_id.z >= paramsBuffer.numCascades) return;
+    const i32 texSize = i32(N);
+    i32x2 id = i32x2(g_id.xy);
+    const i32 cascade_index = i32(g_id.z);
+    const f32 tile_length = paramsBuffer.cascadeParams[cascade_index].x;
+
+    f32 k_mag = get_kmag(id, cascade_index, texSize, tile_length);
+    f32 tan_k = 0.0;
+    f32 omega = dispersion_relation(k_mag, paramsBuffer.depth, tan_k);
+    f32x2 jonswap_results = jonswap_spectrum(omega, paramsBuffer.windSpeed, paramsBuffer.fetch);
+    spectrumData.omega_peak = jonswap_results.y;
+    imageStore(spectrumMap, 
+    	i32x3(id, cascade_index), 
+    	f32x4(jonswap_results.x * dphi_dk(k_mag, omega, paramsBuffer.depth, tan_k), 
+    	0.0, 0.0, 1.0));
+}
+
+
+f32 depth_attenuation(f32 omega, f32 depth) {
+    f32 w_h = omega * sqrt(depth/g);
+
+    if (w_h >= 2.0) {
+        return 1.0;
+    } else if (w_h > 1.0) {    
+        return 1.0 - 0.5 * (2.0 - w_h) * (2.0 - w_h);
+    } else {
+        return 0.5 * w_h * w_h;
+    }
+}
+
+kernel[32, 32, 1] tmaSpectrum(g_id : GlobalInvocationID) {
+    if (g_id.x >= N) return;
+    if (g_id.y >= N) return;
+    if (g_id.z >= paramsBuffer.numCascades) return;
+    
+    const i32 texSize = i32(N);
+    i32x2 id = i32x2(g_id.xy);
+    const i32 cascade_index = i32(g_id.z);
+    const f32 tile_length = paramsBuffer.cascadeParams[cascade_index].x;
+
+    f32 k_mag = get_kmag(id, cascade_index, texSize, tile_length);
+    f32 tan_k = 0.0;
+    f32 omega = dispersion_relation(k_mag, paramsBuffer.depth, tan_k);
+    f32x2 tma_results = jonswap_spectrum(omega, paramsBuffer.windSpeed, paramsBuffer.fetch) 
+    					* depth_attenuation(omega, paramsBuffer.depth);
+	spectrumData.omega_peak = tma_results.y;
+    imageStore(spectrumMap, 
+    	i32x3(id, cascade_index), 
+    	f32x4(tma_results.x * dphi_dk(k_mag, omega, paramsBuffer.depth, tan_k), 
+    	0.0, 0.0, 1.0));
+}
